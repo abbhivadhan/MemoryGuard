@@ -1,0 +1,113 @@
+version: '3.8'
+
+services:
+  # Local PostgreSQL (optional - comment out if using Supabase)
+  # To use Supabase instead:
+  # 1. Comment out this postgres service
+  # 2. Update DATABASE_URL in backend and celery-worker services
+  # 3. Remove postgres dependency from backend and celery-worker
+  postgres:
+    image: postgres:15-alpine
+    container_name: memoryguard-postgres
+    environment:
+      POSTGRES_USER: memoryguard
+      POSTGRES_PASSWORD: memoryguard
+      POSTGRES_DB: memoryguard
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memoryguard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: memoryguard-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: memoryguard-backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      # Local PostgreSQL (default)
+      - DATABASE_URL=postgresql://memoryguard:memoryguard@postgres:5432/memoryguard
+      # For Supabase, replace with your connection string:
+      # - DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+      - DEBUG=True
+      - ENVIRONMENT=development
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # If using Supabase, remove postgres dependency:
+    # depends_on:
+    #   redis:
+    #     condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: memoryguard-frontend
+    command: npm run dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: memoryguard-celery-worker
+    command: celery -A celery_worker worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    environment:
+      # Local PostgreSQL (default)
+      - DATABASE_URL=postgresql://memoryguard:memoryguard@postgres:5432/memoryguard
+      # For Supabase, replace with your connection string:
+      # - DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/2
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # If using Supabase, remove postgres dependency:
+    # depends_on:
+    #   redis:
+    #     condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

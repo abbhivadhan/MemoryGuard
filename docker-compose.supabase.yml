@@ -1,0 +1,33 @@
+# Docker Compose override for using Supabase PostgreSQL
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.supabase.yml up
+
+version: '3.8'
+
+services:
+  backend:
+    environment:
+      # Replace with your Supabase connection string
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres}
+      - SUPABASE_URL=${SUPABASE_URL:-https://YOUR_PROJECT_REF.supabase.co}
+      - SUPABASE_KEY=${SUPABASE_KEY:-your_anon_key}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-your_service_role_key}
+    depends_on:
+      # Remove postgres dependency when using Supabase
+      redis:
+        condition: service_healthy
+
+  celery-worker:
+    environment:
+      # Replace with your Supabase connection string
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres}
+    depends_on:
+      # Remove postgres dependency when using Supabase
+      redis:
+        condition: service_healthy
+
+# Comment out or remove local postgres when using Supabase
+# Uncomment the lines below to disable local postgres:
+# services:
+#   postgres:
+#     profiles:
+#       - disabled
