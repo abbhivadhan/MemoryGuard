@@ -35,9 +35,9 @@ async def create_reminder(
         user_id=current_user.id,
         title=reminder_data.title,
         description=reminder_data.description,
-        reminder_type=ReminderType(reminder_data.reminder_type),
+        reminder_type=reminder_data.reminder_type,  # String value, SQLAlchemy will handle enum conversion
         scheduled_time=reminder_data.scheduled_time,
-        frequency=ReminderFrequency(reminder_data.frequency),
+        frequency=reminder_data.frequency,  # String value, SQLAlchemy will handle enum conversion
         send_notification=reminder_data.send_notification,
         related_entity_id=reminder_data.related_entity_id
     )
@@ -66,7 +66,7 @@ async def get_reminders(
     
     # Apply filters
     if reminder_type:
-        query = query.filter(Reminder.reminder_type == ReminderType(reminder_type))
+        query = query.filter(Reminder.reminder_type == reminder_type)  # String comparison, SQLAlchemy handles enum
     
     if is_active is not None:
         query = query.filter(Reminder.is_active == is_active)

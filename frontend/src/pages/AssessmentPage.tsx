@@ -4,13 +4,15 @@
  * Requirements: 12.1, 12.2, 12.4
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MMSETest from '../components/cognitive/MMSETest';
 import MoCATest from '../components/cognitive/MoCATest';
 import AssessmentHistory from '../components/cognitive/AssessmentHistory';
 import assessmentService from '../services/assessmentService';
 import { useAuthStore } from '../store/authStore';
+import Scene from '../components/3d/Scene';
+import Starfield from '../components/3d/Starfield';
 
 type AssessmentView = 'history' | 'mmse' | 'moca';
 
@@ -111,48 +113,59 @@ const AssessmentPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
-      {/* Navigation */}
-      {view !== 'history' && (
-        <div className="fixed top-2 sm:top-4 left-2 sm:left-4 z-50">
-          <button
-            onClick={() => {
-              if (window.confirm('Are you sure you want to exit? Your progress will be saved.')) {
-                setView('history');
-                setCurrentAssessmentId(null);
-              }
-            }}
-            className="bg-gray-800 hover:bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base touch-target"
-          >
-            <span className="hidden sm:inline">← Back to History</span>
-            <span className="sm:hidden">← Back</span>
-          </button>
-        </div>
-      )}
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* 3D Background Scene */}
+      <div className="fixed inset-0 z-0">
+        <Scene camera={{ position: [0, 0, 8], fov: 75 }} enablePhysics={false}>
+          <Suspense fallback={null}>
+            <Starfield count={200} />
+          </Suspense>
+        </Scene>
+      </div>
 
-      {/* Content */}
-      {view === 'history' && (
-        <AssessmentHistory
-          userId={user.id}
-          onStartNewAssessment={(type) => handleStartAssessment(type as 'MMSE' | 'MoCA')}
-        />
-      )}
+      <div className="relative z-10">
+        {/* Navigation */}
+        {view !== 'history' && (
+          <div className="fixed top-2 sm:top-4 left-2 sm:left-4 z-50">
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to exit? Your progress will be saved.')) {
+                  setView('history');
+                  setCurrentAssessmentId(null);
+                }
+              }}
+              className="backdrop-blur-sm bg-white/5 hover:bg-white/10 text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base touch-target border border-white/10"
+            >
+              <span className="hidden sm:inline">← Back to History</span>
+              <span className="sm:hidden">← Back</span>
+            </button>
+          </div>
+        )}
 
-      {view === 'mmse' && currentAssessmentId && (
-        <MMSETest
-          assessmentId={currentAssessmentId}
-          onComplete={handleCompleteAssessment}
-          onSaveProgress={handleSaveProgress}
-        />
-      )}
+        {/* Content */}
+        {view === 'history' && (
+          <AssessmentHistory
+            userId={user.id}
+            onStartNewAssessment={(type) => handleStartAssessment(type as 'MMSE' | 'MoCA')}
+          />
+        )}
 
-      {view === 'moca' && currentAssessmentId && (
-        <MoCATest
-          assessmentId={currentAssessmentId}
-          onComplete={handleCompleteAssessment}
-          onSaveProgress={handleSaveProgress}
-        />
-      )}
+        {view === 'mmse' && currentAssessmentId && (
+          <MMSETest
+            assessmentId={currentAssessmentId}
+            onComplete={handleCompleteAssessment}
+            onSaveProgress={handleSaveProgress}
+          />
+        )}
+
+        {view === 'moca' && currentAssessmentId && (
+          <MoCATest
+            assessmentId={currentAssessmentId}
+            onComplete={handleCompleteAssessment}
+            onSaveProgress={handleSaveProgress}
+          />
+        )}
+      </div>
     </div>
   );
 };

@@ -12,11 +12,11 @@ from pathlib import Path
 
 from app.models.prediction import Prediction
 from app.models.health_metric import HealthMetric
-# Lazy imports to avoid XGBoost loading issues in dev mode
-# from app.ml.preprocessing import FeaturePreprocessor
-# from app.ml.models.ensemble import AlzheimerEnsemble
-# from app.ml.interpretability import EnsembleSHAPExplainer
-# from app.ml.forecasting import ProgressionForecaster
+from app.ml.preprocessing import FeaturePreprocessor
+from app.ml.models.ensemble import AlzheimerEnsemble
+from app.ml.interpretability import EnsembleSHAPExplainer
+from app.ml.forecasting import ProgressionForecaster
+from app.ml.model_registry import get_model_registry
 
 logger = logging.getLogger(__name__)
 
@@ -38,23 +38,67 @@ class MLService:
         self.ensemble_model = None
         self.explainer = None
         self.forecaster = ProgressionForecaster()
-        self.model_version = "1.0.0"
+        self.model_version = None
+        self.model_registry = get_model_registry()
         
         # Load models if available
         self._load_models()
+        
+        # Warm up models
+        if self.ensemble_model and self.ensemble_model.is_trained:
+            self._warmup_models()
     
     def _load_models(self) -> None:
-        """Load trained models from disk."""
+        """Load trained models from registry."""
         try:
-            model_dir = Path("models/ensemble")
-            if model_dir.exists():
-                self.ensemble_model = AlzheimerEnsemble()
-                self.ensemble_model.load(str(model_dir))
-                logger.info("Ensemble model loaded successfully")
+            # Try to load production model first
+            production_model = self.model_registry.get_production_model()
+            
+            if production_model:
+                model_path = production_model['path']
+                self.model_version = production_model['version']
+                logger.info(f"Loading production model: {self.model_version}")
             else:
-                logger.warning("No trained models found. Models need to be trained.")
+                # Fall back to latest model
+                latest_model = self.model_registry.get_latest_model()
+                if latest_model:
+                    model_path = latest_model['path']
+                    self.model_version = latest_model['version']
+                    logger.info(f"Loading latest model: {self.model_version}")
+                else:
+                    logger.warning("No trained models found in registry. Models need to be trained.")
+                    return
+            
+            # Load ensemble model
+            ensemble_path = Path(model_path) / 'ensemble'
+            if ensemble_path.exists():
+                self.ensemble_model = AlzheimerEnsemble()
+                self.ensemble_model.load(str(ensemble_path))
+                logger.info(f"Ensemble model loaded successfully: {self.model_version}")
+            else:
+                logger.error(f"Model files not found at {ensemble_path}")
+                
         except Exception as e:
             logger.error(f"Error loading models: {str(e)}")
+    
+    def _warmup_models(self) -> None:
+        """Warm up models with dummy predictions to optimize performance."""
+        try:
+            logger.info("Warming up ML models...")
+            
+            # Create dummy input with correct number of features
+            n_features = len(self.ensemble_model.feature_names)
+            dummy_input = np.zeros(n_features)
+            
+            # Run a few dummy predictions
+            for _ in range(3):
+                self.ensemble_model.predict(dummy_input)
+                self.ensemble_model.predict_proba(dummy_input)
+            
+            logger.info("Model warm-up complete")
+            
+        except Exception as e:
+            logger.warning(f"Model warm-up failed: {str(e)}")
     
     async def create_prediction_async(
         self,

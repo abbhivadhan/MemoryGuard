@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import BaseModel
 from datetime import datetime
+from app.core.encryption import EncryptedString
 
 
 class Medication(BaseModel):
@@ -25,9 +26,9 @@ class Medication(BaseModel):
     )
     
     # Medication details
-    name = Column(String, nullable=False)
-    dosage = Column(String, nullable=False)
-    frequency = Column(String, nullable=False)  # e.g., "twice daily", "every 8 hours"
+    name = Column(EncryptedString(length=255), nullable=False)
+    dosage = Column(EncryptedString(length=255), nullable=False)
+    frequency = Column(EncryptedString(length=255), nullable=False)  # e.g., "twice daily", "every 8 hours"
     
     # Schedule - array of datetime objects for scheduled doses
     schedule = Column(ARRAY(DateTime(timezone=True)), nullable=False, default=list)
@@ -43,9 +44,9 @@ class Medication(BaseModel):
     active = Column(Boolean, nullable=False, default=True, index=True)
     
     # Additional information
-    instructions = Column(String, nullable=True)
-    prescriber = Column(String, nullable=True)
-    pharmacy = Column(String, nullable=True)
+    instructions = Column(EncryptedString(length=1024), nullable=True)
+    prescriber = Column(EncryptedString(length=255), nullable=True)
+    pharmacy = Column(EncryptedString(length=255), nullable=True)
     
     # Start and end dates
     start_date = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)

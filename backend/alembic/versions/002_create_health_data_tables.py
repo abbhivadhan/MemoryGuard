@@ -19,38 +19,61 @@ depends_on = None
 def upgrade() -> None:
     """Create health data tables"""
     
-    # Create enums
+    # Create enums (with IF NOT EXISTS check)
     op.execute("""
-        CREATE TYPE metrictype AS ENUM ('cognitive', 'biomarker', 'imaging', 'lifestyle', 'cardiovascular');
-        CREATE TYPE metricsource AS ENUM ('manual', 'assessment', 'device', 'lab');
-        CREATE TYPE assessmenttype AS ENUM ('MMSE', 'MoCA', 'CDR', 'ClockDrawing');
-        CREATE TYPE assessmentstatus AS ENUM ('in_progress', 'completed', 'abandoned');
-        CREATE TYPE riskcategory AS ENUM ('low', 'moderate', 'high');
-        CREATE TYPE relationshiptype AS ENUM ('family', 'friend', 'caregiver', 'healthcare_provider', 'other');
+        DO $$ BEGIN
+            CREATE TYPE metrictype AS ENUM ('cognitive', 'biomarker', 'imaging', 'lifestyle', 'cardiovascular');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        
+        DO $$ BEGIN
+            CREATE TYPE metricsource AS ENUM ('manual', 'assessment', 'device', 'lab');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        
+        DO $$ BEGIN
+            CREATE TYPE assessmenttype AS ENUM ('MMSE', 'MoCA', 'CDR', 'ClockDrawing');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        
+        DO $$ BEGIN
+            CREATE TYPE assessmentstatus AS ENUM ('in_progress', 'completed', 'abandoned');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        
+        DO $$ BEGIN
+            CREATE TYPE riskcategory AS ENUM ('low', 'moderate', 'high');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        
+        DO $$ BEGIN
+            CREATE TYPE relationshiptype AS ENUM ('family', 'friend', 'caregiver', 'healthcare_provider', 'other');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
     
     # Create health_metrics table
-    op.create_table(
-        'health_metrics',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('type', sa.Enum(
-            'cognitive', 'biomarker', 'imaging', 'lifestyle', 'cardiovascular',
-            name='metrictype'
-        ), nullable=False),
-        sa.Column('name', sa.String(), nullable=False),
-        sa.Column('value', sa.Float(), nullable=False),
-        sa.Column('unit', sa.String(), nullable=False),
-        sa.Column('source', sa.Enum(
-            'manual', 'assessment', 'device', 'lab',
-            name='metricsource'
-        ), nullable=False),
-        sa.Column('timestamp', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('notes', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE health_metrics (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            type metrictype NOT NULL,
+            name VARCHAR NOT NULL,
+            value FLOAT NOT NULL,
+            unit VARCHAR NOT NULL,
+            source metricsource NOT NULL,
+            timestamp TIMESTAMPTZ NOT NULL,
+            notes VARCHAR,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for health_metrics
     op.create_index('ix_health_metrics_user_id', 'health_metrics', ['user_id'])
@@ -63,29 +86,23 @@ def upgrade() -> None:
     op.create_index('ix_health_metrics_user_name', 'health_metrics', ['user_id', 'name'])
     
     # Create assessments table
-    op.create_table(
-        'assessments',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('type', sa.Enum(
-            'MMSE', 'MoCA', 'CDR', 'ClockDrawing',
-            name='assessmenttype'
-        ), nullable=False),
-        sa.Column('status', sa.Enum(
-            'in_progress', 'completed', 'abandoned',
-            name='assessmentstatus'
-        ), nullable=False),
-        sa.Column('score', sa.Integer(), nullable=True),
-        sa.Column('max_score', sa.Integer(), nullable=False),
-        sa.Column('responses', JSON, nullable=False, server_default='{}'),
-        sa.Column('duration', sa.Integer(), nullable=True),
-        sa.Column('started_at', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('notes', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE assessments (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            type assessmenttype NOT NULL,
+            status assessmentstatus NOT NULL,
+            score INTEGER,
+            max_score INTEGER NOT NULL,
+            responses JSON NOT NULL DEFAULT '{}',
+            duration INTEGER,
+            started_at TIMESTAMPTZ NOT NULL,
+            completed_at TIMESTAMPTZ,
+            notes VARCHAR,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for assessments
     op.create_index('ix_assessments_user_id', 'assessments', ['user_id'])
@@ -96,26 +113,26 @@ def upgrade() -> None:
     op.create_index('ix_assessments_user_type_completed', 'assessments', ['user_id', 'type', 'completed_at'])
     
     # Create medications table
-    op.create_table(
-        'medications',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('name', sa.String(), nullable=False),
-        sa.Column('dosage', sa.String(), nullable=False),
-        sa.Column('frequency', sa.String(), nullable=False),
-        sa.Column('schedule', ARRAY(sa.DateTime(timezone=True)), nullable=False, server_default='{}'),
-        sa.Column('adherence_log', JSON, nullable=False, server_default='[]'),
-        sa.Column('side_effects', ARRAY(sa.String()), nullable=False, server_default='{}'),
-        sa.Column('active', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('instructions', sa.String(), nullable=True),
-        sa.Column('prescriber', sa.String(), nullable=True),
-        sa.Column('pharmacy', sa.String(), nullable=True),
-        sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE medications (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name VARCHAR NOT NULL,
+            dosage VARCHAR NOT NULL,
+            frequency VARCHAR NOT NULL,
+            schedule TIMESTAMPTZ[] NOT NULL DEFAULT '{}',
+            adherence_log JSON NOT NULL DEFAULT '[]',
+            side_effects VARCHAR[] NOT NULL DEFAULT '{}',
+            active BOOLEAN NOT NULL DEFAULT true,
+            instructions VARCHAR,
+            prescriber VARCHAR,
+            pharmacy VARCHAR,
+            start_date TIMESTAMPTZ NOT NULL,
+            end_date TIMESTAMPTZ,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for medications
     op.create_index('ix_medications_user_id', 'medications', ['user_id'])
@@ -124,30 +141,27 @@ def upgrade() -> None:
     op.create_index('ix_medications_user_start_date', 'medications', ['user_id', 'start_date'])
     
     # Create predictions table
-    op.create_table(
-        'predictions',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('risk_score', sa.Float(), nullable=False),
-        sa.Column('risk_category', sa.Enum(
-            'low', 'moderate', 'high',
-            name='riskcategory'
-        ), nullable=False),
-        sa.Column('confidence_interval_lower', sa.Float(), nullable=False),
-        sa.Column('confidence_interval_upper', sa.Float(), nullable=False),
-        sa.Column('feature_importance', JSON, nullable=False, server_default='{}'),
-        sa.Column('forecast_six_month', sa.Float(), nullable=True),
-        sa.Column('forecast_twelve_month', sa.Float(), nullable=True),
-        sa.Column('forecast_twenty_four_month', sa.Float(), nullable=True),
-        sa.Column('recommendations', ARRAY(sa.String()), nullable=False, server_default='{}'),
-        sa.Column('model_version', sa.String(), nullable=False),
-        sa.Column('model_type', sa.String(), nullable=False),
-        sa.Column('input_features', JSON, nullable=False, server_default='{}'),
-        sa.Column('prediction_date', sa.DateTime(timezone=True), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE predictions (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            risk_score FLOAT NOT NULL,
+            risk_category riskcategory NOT NULL,
+            confidence_interval_lower FLOAT NOT NULL,
+            confidence_interval_upper FLOAT NOT NULL,
+            feature_importance JSON NOT NULL DEFAULT '{}',
+            forecast_six_month FLOAT,
+            forecast_twelve_month FLOAT,
+            forecast_twenty_four_month FLOAT,
+            recommendations VARCHAR[] NOT NULL DEFAULT '{}',
+            model_version VARCHAR NOT NULL,
+            model_type VARCHAR NOT NULL,
+            input_features JSON NOT NULL DEFAULT '{}',
+            prediction_date TIMESTAMPTZ NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for predictions
     op.create_index('ix_predictions_user_id', 'predictions', ['user_id'])
@@ -157,26 +171,23 @@ def upgrade() -> None:
     op.create_index('ix_predictions_user_risk', 'predictions', ['user_id', 'risk_category'])
     
     # Create emergency_contacts table
-    op.create_table(
-        'emergency_contacts',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('name', sa.String(), nullable=False),
-        sa.Column('phone', sa.String(), nullable=False),
-        sa.Column('email', sa.String(), nullable=True),
-        sa.Column('relationship', sa.Enum(
-            'family', 'friend', 'caregiver', 'healthcare_provider', 'other',
-            name='relationshiptype'
-        ), nullable=False),
-        sa.Column('relationship_description', sa.String(), nullable=True),
-        sa.Column('priority', sa.String(), nullable=False, server_default='1'),
-        sa.Column('active', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('address', sa.String(), nullable=True),
-        sa.Column('notes', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE emergency_contacts (
+            id UUID PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            name VARCHAR NOT NULL,
+            phone VARCHAR NOT NULL,
+            email VARCHAR,
+            relationship relationshiptype NOT NULL,
+            relationship_description VARCHAR,
+            priority VARCHAR NOT NULL DEFAULT '1',
+            active BOOLEAN NOT NULL DEFAULT true,
+            address VARCHAR,
+            notes VARCHAR,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for emergency_contacts
     op.create_index('ix_emergency_contacts_user_id', 'emergency_contacts', ['user_id'])
@@ -184,28 +195,24 @@ def upgrade() -> None:
     op.create_index('ix_emergency_contacts_user_priority', 'emergency_contacts', ['user_id', 'priority'])
     
     # Create caregiver_relationships table
-    op.create_table(
-        'caregiver_relationships',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('patient_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('caregiver_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('relationship_type', sa.Enum(
-            'family', 'friend', 'caregiver', 'healthcare_provider', 'other',
-            name='relationshiptype'
-        ), nullable=False),
-        sa.Column('relationship_description', sa.String(), nullable=True),
-        sa.Column('can_view_health_data', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_view_assessments', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_view_medications', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_manage_reminders', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_receive_alerts', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('active', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('approved', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['patient_id'], ['users.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['caregiver_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE caregiver_relationships (
+            id UUID PRIMARY KEY,
+            patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            caregiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            relationship_type relationshiptype NOT NULL,
+            relationship_description VARCHAR,
+            can_view_health_data BOOLEAN NOT NULL DEFAULT true,
+            can_view_assessments BOOLEAN NOT NULL DEFAULT true,
+            can_view_medications BOOLEAN NOT NULL DEFAULT true,
+            can_manage_reminders BOOLEAN NOT NULL DEFAULT true,
+            can_receive_alerts BOOLEAN NOT NULL DEFAULT true,
+            active BOOLEAN NOT NULL DEFAULT true,
+            approved BOOLEAN NOT NULL DEFAULT false,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for caregiver_relationships
     op.create_index('ix_caregiver_relationships_patient_id', 'caregiver_relationships', ['patient_id'])
@@ -216,24 +223,23 @@ def upgrade() -> None:
     op.create_index('ix_caregiver_relationships_unique', 'caregiver_relationships', ['patient_id', 'caregiver_id'], unique=True)
     
     # Create provider_relationships table
-    op.create_table(
-        'provider_relationships',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('patient_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('provider_id', UUID(as_uuid=True), nullable=False),
-        sa.Column('provider_type', sa.String(), nullable=True),
-        sa.Column('specialty', sa.String(), nullable=True),
-        sa.Column('organization', sa.String(), nullable=True),
-        sa.Column('can_view_all_data', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_add_notes', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('can_view_predictions', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('active', sa.Boolean(), nullable=False, server_default='true'),
-        sa.Column('approved', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['patient_id'], ['users.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['provider_id'], ['users.id'], ondelete='CASCADE'),
-    )
+    op.execute("""
+        CREATE TABLE provider_relationships (
+            id UUID PRIMARY KEY,
+            patient_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            provider_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            provider_type VARCHAR,
+            specialty VARCHAR,
+            organization VARCHAR,
+            can_view_all_data BOOLEAN NOT NULL DEFAULT true,
+            can_add_notes BOOLEAN NOT NULL DEFAULT true,
+            can_view_predictions BOOLEAN NOT NULL DEFAULT true,
+            active BOOLEAN NOT NULL DEFAULT true,
+            approved BOOLEAN NOT NULL DEFAULT false,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
     
     # Create indexes for provider_relationships
     op.create_index('ix_provider_relationships_patient_id', 'provider_relationships', ['patient_id'])

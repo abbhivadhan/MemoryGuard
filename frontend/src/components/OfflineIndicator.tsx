@@ -20,8 +20,8 @@ export default function OfflineIndicator() {
     }
   };
 
-  // Don't show indicator if online and no pending items
-  if (isOnline && syncStatus.pendingItems === 0 && !syncStatus.isSyncing) {
+  // Only show indicator when offline, syncing, or there are pending items/errors
+  if (isOnline && syncStatus.pendingItems === 0 && !syncStatus.isSyncing && syncStatus.errors.length === 0) {
     return null;
   }
 
@@ -76,12 +76,7 @@ export default function OfflineIndicator() {
               <p className="text-sm font-semibold">Sync Error</p>
               <p className="text-xs opacity-90">Failed to sync some items</p>
             </div>
-          ) : (
-            <div>
-              <p className="text-sm font-semibold">Synced</p>
-              <p className="text-xs opacity-90">All changes saved</p>
-            </div>
-          )}
+          ) : null}
         </div>
 
         {/* Action Button */}
@@ -93,11 +88,6 @@ export default function OfflineIndicator() {
           >
             <RefreshCw className="w-4 h-4" />
           </button>
-        )}
-
-        {/* Success Indicator */}
-        {isOnline && syncStatus.pendingItems === 0 && syncStatus.lastSyncTime && (
-          <CheckCircle className="w-5 h-5 flex-shrink-0" />
         )}
       </div>
 

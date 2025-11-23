@@ -29,6 +29,26 @@ MemoryGuard is a comprehensive web application that combines advanced machine le
 - Celery for background tasks
 - scikit-learn, XGBoost, TensorFlow for ML models
 
+## Security & Compliance
+
+MemoryGuard implements comprehensive security measures and HIPAA compliance:
+
+- **Authentication**: Google OAuth 2.0 with JWT tokens
+- **Rate Limiting**: Redis-backed rate limiting with per-endpoint quotas
+- **Input Validation**: Centralized validation and sanitization middleware
+- **Security Headers**: CSP, X-Frame-Options, HSTS, XSS Protection
+- **Data Encryption**: Field-level encryption for PHI, TLS 1.3 in transit
+- **Audit Logging**: Comprehensive audit trail for all PHI access
+- **Access Controls**: Role-based access control (RBAC) with granular permissions
+- **HIPAA Compliance**: Full HIPAA compliance documentation and procedures
+
+📋 **Documentation**:
+- [Security Policy](SECURITY_POLICY.md) - Security policies and procedures
+- [HIPAA Compliance](backend/HIPAA_COMPLIANCE.md) - Detailed HIPAA compliance documentation
+- [Imaging HIPAA Compliance](backend/IMAGING_HIPAA_COMPLIANCE.md) - Medical imaging security
+
+🔒 **Reporting Security Issues**: Please email security@memoryguard.com (do not create public issues)
+
 ## Project Structure
 
 ```
@@ -128,6 +148,8 @@ cp backend/.env.example backend/.env
    - Redis URL
    - JWT secret
    - Google OAuth credentials
+   - `DATA_ENCRYPTION_KEY` - Base64 Fernet key for encrypting sensitive fields
+   - `AUDIT_LOG_PATH` - Absolute/relative path for JSONL audit logs
 
 See `backend/SUPABASE_SETUP.md` for detailed setup instructions.
 

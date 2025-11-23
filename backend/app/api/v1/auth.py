@@ -2,8 +2,7 @@
 Authentication API endpoints.
 Handles Google OAuth, token refresh, and logout.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Response
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -12,11 +11,19 @@ from app.core.security import verify_refresh_token, create_access_token
 from app.services.auth_service import AuthService
 from app.api.dependencies import get_current_user, get_refresh_token_from_cookie
 from app.models.user import User
+from app.core.audit import audit_logger
 import logging
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+def _get_request_ip(request: Request) -> str:
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 
 # Request/Response models
@@ -82,7 +89,8 @@ class DevLoginRequest(BaseModel):
 @router.post("/dev-login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def dev_login(
     login_request: DevLoginRequest,
-    response: Response
+    response: Response,
+    request: Request
 ):
     """
     DEV ONLY: Simple login without database for testing.
@@ -106,6 +114,13 @@ async def dev_login(
     
     # Hardcoded dev credentials
     if login_request.email != "abbhivadhan279@gmail.com" or login_request.password != "123456":
+        audit_logger.log_auth_event(
+            action="dev_login",
+            result="failure",
+            ip=_get_request_ip(request),
+            metadata={"reason": "invalid_credentials"},
+            request_id=getattr(request.state, "request_id", None),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
@@ -113,7 +128,7 @@ async def dev_login(
     
     # Create mock user data
     user_data = {
-        "id": "dev-user-123",
+        "id": "00000000-0000-0000-0000-000000000001",  # Valid UUID for dev user
         "email": "abbhivadhan279@gmail.com",
         "name": "Dev User",
         "created_at": datetime.utcnow().isoformat(),
@@ -140,6 +155,15 @@ async def dev_login(
         max_age=7 * 24 * 60 * 60  # 7 days
     )
     
+    audit_logger.log_auth_event(
+        action="dev_login",
+        result="success",
+        user_id=user_data["id"],
+        email=user_data["email"],
+        ip=_get_request_ip(request),
+        metadata={"provider": "dev"},
+        request_id=getattr(request.state, "request_id", None),
+    )
     logger.info(f"Dev user logged in: {user_data['email']}")
     
     return TokenResponse(
@@ -154,6 +178,7 @@ async def dev_login(
 async def google_auth(
     auth_request: GoogleAuthRequest,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db)
 ):
     """
@@ -176,12 +201,16 @@ async def google_auth(
     Raises:
         HTTPException: If Google token verification fails
     """
+    user_metadata = {"id": None, "email": None}
+    
     try:
         # Verify Google token and get user info
         user_info = await AuthService.verify_google_token(auth_request.token)
         
         # Get or create user
         user = AuthService.get_or_create_user(db, user_info)
+        user_metadata["id"] = str(user.id)
+        user_metadata["email"] = user.email
         
         # Create JWT tokens
         tokens = AuthService.create_tokens_for_user(user)
@@ -196,6 +225,15 @@ async def google_auth(
             max_age=7 * 24 * 60 * 60  # 7 days
         )
         
+        audit_logger.log_auth_event(
+            action="google_login",
+            result="success",
+            user_id=user_metadata["id"],
+            email=user_metadata["email"],
+            ip=_get_request_ip(request),
+            metadata={"provider": "google"},
+            request_id=getattr(request.state, "request_id", None),
+        )
         logger.info(f"User authenticated successfully: {user.email}")
         
         return TokenResponse(
@@ -205,9 +243,27 @@ async def google_auth(
             user=user.to_dict()
         )
         
-    except HTTPException:
+    except HTTPException as exc:
+        audit_logger.log_auth_event(
+            action="google_login",
+            result="failure",
+            user_id=user_metadata["id"],
+            email=user_metadata["email"],
+            ip=_get_request_ip(request),
+            metadata={"reason": exc.detail},
+            request_id=getattr(request.state, "request_id", None),
+        )
         raise
     except Exception as e:
+        audit_logger.log_auth_event(
+            action="google_login",
+            result="error",
+            user_id=user_metadata["id"],
+            email=user_metadata["email"],
+            ip=_get_request_ip(request),
+            metadata={"reason": str(e)},
+            request_id=getattr(request.state, "request_id", None),
+        )
         logger.error(f"Authentication error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -217,6 +273,7 @@ async def google_auth(
 
 @router.post("/refresh", response_model=RefreshTokenResponse, status_code=status.HTTP_200_OK)
 async def refresh_token(
+    request: Request,
     refresh_token: str = Depends(get_refresh_token_from_cookie),
     db: Session = Depends(get_db)
 ):
@@ -238,6 +295,8 @@ async def refresh_token(
     Raises:
         HTTPException: If refresh token is invalid or user not found
     """
+    user_id = None
+    
     try:
         # Verify refresh token
         payload = verify_refresh_token(refresh_token)
@@ -266,6 +325,14 @@ async def refresh_token(
         }
         access_token = create_access_token(token_data)
         
+        audit_logger.log_auth_event(
+            action="refresh",
+            result="success",
+            user_id=str(user.id),
+            email=user.email,
+            ip=_get_request_ip(request),
+            request_id=getattr(request.state, "request_id", None),
+        )
         logger.info(f"Token refreshed for user: {user.email}")
         
         return RefreshTokenResponse(
@@ -273,9 +340,25 @@ async def refresh_token(
             token_type="bearer"
         )
         
-    except HTTPException:
+    except HTTPException as exc:
+        audit_logger.log_auth_event(
+            action="refresh",
+            result="failure",
+            user_id=user_id,
+            ip=_get_request_ip(request),
+            metadata={"reason": exc.detail},
+            request_id=getattr(request.state, "request_id", None),
+        )
         raise
     except Exception as e:
+        audit_logger.log_auth_event(
+            action="refresh",
+            result="error",
+            user_id=user_id,
+            ip=_get_request_ip(request),
+            metadata={"reason": str(e)},
+            request_id=getattr(request.state, "request_id", None),
+        )
         logger.error(f"Token refresh error: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -286,6 +369,7 @@ async def refresh_token(
 @router.post("/logout", response_model=MessageResponse, status_code=status.HTTP_200_OK)
 async def logout(
     response: Response,
+    request: Request,
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -313,6 +397,14 @@ async def logout(
         samesite="lax"
     )
     
+    audit_logger.log_auth_event(
+        action="logout",
+        result="success",
+        user_id=str(current_user.id),
+        email=current_user.email,
+        ip=_get_request_ip(request),
+        request_id=getattr(request.state, "request_id", None),
+    )
     logger.info(f"User logged out: {current_user.email}")
     
     return MessageResponse(message="Successfully logged out")

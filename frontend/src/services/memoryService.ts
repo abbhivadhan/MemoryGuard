@@ -125,8 +125,13 @@ export interface FaceRecognitionResponse {
 // Reminder API
 export const reminderService = {
   async createReminder(data: ReminderCreate): Promise<Reminder> {
-    const response = await api.post('/reminders/', data);
-    return response.data;
+    try {
+      const response = await api.post('/reminders/', data);
+      return response.data;
+    } catch (error: any) {
+      console.error('API Error creating reminder:', error.response?.data || error);
+      throw error;
+    }
   },
 
   async getReminders(filters?: {

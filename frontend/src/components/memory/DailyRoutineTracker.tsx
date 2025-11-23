@@ -126,7 +126,7 @@ const DailyRoutineTracker: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">Daily Routine</h2>
+        <h2 className="text-3xl font-bold text-blue-50">Daily Routine</h2>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -136,7 +136,7 @@ const DailyRoutineTracker: React.FC = () => {
       </div>
 
       {/* 3D Progress Visualization */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4 text-center">Today's Progress</h3>
         <div className="h-64 relative">
           <Canvas camera={{ position: [0, 2, 5], fov: 50 }}>
@@ -147,10 +147,10 @@ const DailyRoutineTracker: React.FC = () => {
           </Canvas>
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <div className="text-4xl font-bold text-gray-800">
+              <div className="text-4xl font-bold text-blue-50">
                 {completedCount}/{totalCount}
               </div>
-              <div className="text-sm text-gray-600">Tasks Completed</div>
+              <div className="text-sm text-gray-400">Tasks Completed</div>
             </div>
           </div>
         </div>
@@ -159,15 +159,15 @@ const DailyRoutineTracker: React.FC = () => {
           <div className="mt-4 grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-600">{stats.completion_rate}%</div>
-              <div className="text-sm text-gray-600">7-Day Rate</div>
+              <div className="text-sm text-gray-400">7-Day Rate</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">{stats.completed_count}</div>
-              <div className="text-sm text-gray-600">Completed</div>
+              <div className="text-sm text-gray-400">Completed</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-orange-600">{stats.skipped_count}</div>
-              <div className="text-sm text-gray-600">Skipped</div>
+              <div className="text-sm text-gray-400">Skipped</div>
             </div>
           </div>
         )}
@@ -181,38 +181,38 @@ const DailyRoutineTracker: React.FC = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             onSubmit={handleCreateRoutine}
-            className="bg-white rounded-lg shadow-md p-6 mb-6"
+            className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6"
           >
             <h3 className="text-xl font-semibold mb-4">Create New Routine</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Title *</label>
                 <input
                   type="text"
                   required
                   value={newRoutine.title}
                   onChange={(e) => setNewRoutine({ ...newRoutine, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Morning exercise"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Description
                 </label>
                 <textarea
                   value={newRoutine.description}
                   onChange={(e) => setNewRoutine({ ...newRoutine, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   rows={2}
                   placeholder="Additional details..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Time of Day
                 </label>
                 <select
@@ -220,7 +220,7 @@ const DailyRoutineTracker: React.FC = () => {
                   onChange={(e) =>
                     setNewRoutine({ ...newRoutine, time_of_day: e.target.value as any })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="morning">Morning</option>
                   <option value="afternoon">Afternoon</option>
@@ -229,7 +229,7 @@ const DailyRoutineTracker: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Days of Week
                 </label>
                 <div className="flex gap-2">
@@ -254,7 +254,7 @@ const DailyRoutineTracker: React.FC = () => {
                       className={`px-3 py-2 rounded-lg transition-colors ${
                         newRoutine.days_of_week?.includes(index)
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-700'
+                          : 'bg-gray-200 text-gray-300'
                       }`}
                     >
                       {day}
@@ -268,7 +268,7 @@ const DailyRoutineTracker: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -290,7 +290,7 @@ const DailyRoutineTracker: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-gray-500 bg-white rounded-lg shadow-md"
+              className="text-center py-12 text-gray-500 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
             >
               <p className="text-xl mb-2">No routines for today</p>
               <p className="text-sm">Create your first routine to get started</p>
@@ -304,7 +304,7 @@ const DailyRoutineTracker: React.FC = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
-                  className={`bg-white rounded-lg shadow-md p-4 border-l-4 transition-all ${
+                  className={`backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4 border-l-4 transition-all ${
                     isCompleted ? 'border-green-500' : 'border-gray-300'
                   }`}
                 >
@@ -324,13 +324,13 @@ const DailyRoutineTracker: React.FC = () => {
                       <div className="flex-1">
                         <h3
                           className={`text-lg font-semibold ${
-                            isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
+                            isCompleted ? 'line-through text-gray-500' : 'text-blue-50'
                           }`}
                         >
                           {item.routine.title}
                         </h3>
                         {item.routine.description && (
-                          <p className="text-sm text-gray-600">{item.routine.description}</p>
+                          <p className="text-sm text-gray-400">{item.routine.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           {item.routine.time_of_day && (

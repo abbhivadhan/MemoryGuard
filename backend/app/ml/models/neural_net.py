@@ -2,16 +2,40 @@
 Neural Network classifier for Alzheimer's disease prediction using TensorFlow/Keras.
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
 import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers, callbacks
-from sklearn.model_selection import train_test_split
 import logging
 from pathlib import Path
 
+# Lazy import TensorFlow to avoid blocking startup
+if TYPE_CHECKING:
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.keras import layers, callbacks
+
 logger = logging.getLogger(__name__)
+
+# Global variables for lazy-loaded modules
+_tf = None
+_keras = None
+_layers = None
+_callbacks = None
+
+
+def _ensure_tensorflow():
+    """Lazy load TensorFlow modules when first needed."""
+    global _tf, _keras, _layers, _callbacks
+    if _tf is None:
+        logger.info("Loading TensorFlow (first use)...")
+        import tensorflow as tf
+        from tensorflow import keras
+        from tensorflow.keras import layers, callbacks
+        _tf = tf
+        _keras = keras
+        _layers = layers
+        _callbacks = callbacks
+        logger.info("TensorFlow loaded successfully")
+    return _tf, _keras, _layers, _callbacks
 
 
 class AlzheimerNeuralNetwork:
@@ -37,6 +61,9 @@ class AlzheimerNeuralNetwork:
             learning_rate: Learning rate for optimizer
             random_state: Random seed for reproducibility
         """
+        # Lazy load TensorFlow
+        tf, keras, layers, callbacks = _ensure_tensorflow()
+        
         tf.random.set_seed(random_state)
         np.random.seed(random_state)
         
@@ -48,11 +75,14 @@ class AlzheimerNeuralNetwork:
         self.is_trained = False
         self.feature_names = []
         self.history = None
+        self.random_state = random_state
         
         self._build_model()
     
     def _build_model(self) -> None:
         """Build the neural network architecture."""
+        tf, keras, layers, callbacks = _ensure_tensorflow()
+        
         model = keras.Sequential()
         
         # Input layer
@@ -107,6 +137,8 @@ class AlzheimerNeuralNetwork:
         Returns:
             Dictionary with training metrics
         """
+        tf, keras, layers, callbacks = _ensure_tensorflow()
+        
         logger.info(f"Training Neural Network on {len(X_train)} samples")
         
         self.feature_names = feature_names
@@ -225,6 +257,8 @@ class AlzheimerNeuralNetwork:
         if not self.is_trained:
             raise ValueError("Model must be trained before getting feature importance")
         
+        tf, keras, layers, callbacks = _ensure_tensorflow()
+        
         # Use gradient-based importance
         # Create a batch of zeros
         X_baseline = np.zeros((1, self.input_dim))
@@ -291,6 +325,7 @@ class AlzheimerNeuralNetwork:
             filepath: Path to load model from (without extension)
         """
         import json
+        tf, keras, layers, callbacks = _ensure_tensorflow()
         
         # Load Keras model
         model_path = f"{filepath}.keras"

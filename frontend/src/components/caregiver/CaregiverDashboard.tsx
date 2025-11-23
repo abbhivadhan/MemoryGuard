@@ -270,52 +270,50 @@ const CaregiverDashboard: React.FC = () => {
   const totalAlerts = patients.reduce((sum, p) => sum + p.recent_alerts.length, 0);
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Caregiver Dashboard</h1>
-          <p className="text-gray-400">Monitor and support your patients</p>
-        </div>
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold text-white mb-2">Caregiver Portal</h2>
+        <p className="text-gray-400">Monitor and support your patients</p>
+      </div>
 
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="text-gray-400 text-sm mb-2">Total Patients</div>
-            <div className="text-3xl font-bold text-white">{totalPatients}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="text-gray-400 text-sm mb-2">Active Today</div>
-            <div className="text-3xl font-bold text-green-500">{activePatients}</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="text-gray-400 text-sm mb-2">Avg Adherence</div>
-            <div className="text-3xl font-bold text-blue-500">{avgAdherence.toFixed(0)}%</div>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div className="text-gray-400 text-sm mb-2">Recent Alerts</div>
-            <div className="text-3xl font-bold text-yellow-500">{totalAlerts}</div>
-          </div>
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+          <div className="text-gray-400 text-sm mb-2">Total Patients</div>
+          <div className="text-3xl font-bold text-white">{totalPatients}</div>
         </div>
-
-        {/* 3D Visualization */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Patient Status Overview</h2>
-          <StatusVisualization patients={patients} />
+        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+          <div className="text-gray-400 text-sm mb-2">Active Today</div>
+          <div className="text-3xl font-bold text-green-400">{activePatients}</div>
         </div>
+        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+          <div className="text-gray-400 text-sm mb-2">Avg Adherence</div>
+          <div className="text-3xl font-bold text-blue-400">{avgAdherence.toFixed(0)}%</div>
+        </div>
+        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-6 border border-white/10">
+          <div className="text-gray-400 text-sm mb-2">Recent Alerts</div>
+          <div className="text-3xl font-bold text-yellow-400">{totalAlerts}</div>
+        </div>
+      </div>
 
-        {/* Patient Cards */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Your Patients</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {patients.map((patient) => (
-              <PatientCard
-                key={patient.patient_id}
-                patient={patient}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
+      {/* 3D Visualization */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">Patient Status Overview</h3>
+        <StatusVisualization patients={patients} />
+      </div>
+
+      {/* Patient Cards */}
+      <div>
+        <h3 className="text-2xl font-bold text-white mb-4">Your Patients</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {patients.map((patient) => (
+            <PatientCard
+              key={patient.patient_id}
+              patient={patient}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
         </div>
       </div>
     </div>

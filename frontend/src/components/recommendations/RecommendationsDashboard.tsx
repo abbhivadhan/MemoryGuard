@@ -17,12 +17,12 @@ const RecommendationsDashboard: React.FC = () => {
   const [tutorialCategory, setTutorialCategory] = useState<'diet' | 'exercise' | 'sleep' | 'cognitive' | 'social'>('exercise');
 
   const categories = [
-    { value: 'all', label: 'All', icon: '📋' },
-    { value: 'diet', label: 'Diet', icon: '🥗' },
-    { value: 'exercise', label: 'Exercise', icon: '🏃' },
-    { value: 'sleep', label: 'Sleep', icon: '😴' },
-    { value: 'cognitive', label: 'Cognitive', icon: '🧠' },
-    { value: 'social', label: 'Social', icon: '👥' }
+    { value: 'all', label: 'All' },
+    { value: 'diet', label: 'Diet' },
+    { value: 'exercise', label: 'Exercise' },
+    { value: 'sleep', label: 'Sleep' },
+    { value: 'cognitive', label: 'Cognitive' },
+    { value: 'social', label: 'Social' }
   ];
 
   useEffect(() => {
@@ -156,7 +156,6 @@ const RecommendationsDashboard: React.FC = () => {
                   : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
             >
-              <span className="mr-2">{cat.icon}</span>
               {cat.label}
             </button>
           ))}

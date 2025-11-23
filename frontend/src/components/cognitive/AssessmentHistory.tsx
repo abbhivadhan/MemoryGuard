@@ -8,6 +8,8 @@ import React, { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
+import MedicalDisclaimer from '../ui/MedicalDisclaimer';
 
 interface Assessment {
   id: string;
@@ -162,6 +164,11 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
           <p className="text-gray-400">Track your cognitive assessment scores over time</p>
         </div>
 
+        {/* Medical Disclaimer */}
+        <div className="mb-8">
+          <MedicalDisclaimer type="assessment" compact />
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {assessmentTypes.map(type => {
@@ -260,8 +267,17 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
             <tbody className="divide-y divide-gray-700">
               {filteredAssessments.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
-                    No assessments found. Start your first assessment to track your cognitive health.
+                  <td colSpan={5} className="px-6 py-8">
+                    <EmptyState
+                      icon={EmptyStateIcons.NoAssessments}
+                      title="No Assessments Found"
+                      description="Start your first cognitive assessment to track your cognitive health over time. Regular assessments help monitor changes and provide valuable data for analysis."
+                      action={onStartNewAssessment ? {
+                        label: 'Start Assessment',
+                        onClick: () => onStartNewAssessment('MMSE'),
+                      } : undefined}
+                      className="py-0"
+                    />
                   </td>
                 </tr>
               ) : (

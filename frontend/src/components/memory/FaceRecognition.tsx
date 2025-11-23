@@ -105,6 +105,23 @@ const FaceRecognition: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate name is filled
+    if (!newProfile.name.trim()) {
+      alert('Please enter a name before uploading a photo.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
+    if (!modelsLoaded) {
+      alert('Face recognition models are still loading. Please wait a moment and try again.');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      return;
+    }
+
     const img = new Image();
     img.src = URL.createObjectURL(file);
 
@@ -123,8 +140,12 @@ const FaceRecognition: React.FC = () => {
             photo_url: photoUrl,
           });
 
+          alert(`Successfully added ${newProfile.name} to your profiles!`);
           setShowAddForm(false);
           setNewProfile({ name: '', relationship: '', notes: '' });
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
           loadProfiles();
         } catch (error) {
           console.error('Failed to create profile:', error);
@@ -173,26 +194,28 @@ const FaceRecognition: React.FC = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">Face Recognition</h2>
-        <button
+        <h2 className="text-3xl font-bold text-blue-50">Face Recognition</h2>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg hover:from-pink-600 hover:to-rose-600 transition-all shadow-lg"
         >
           {showAddForm ? 'Cancel' : '+ Add Person'}
-        </button>
+        </motion.button>
       </div>
 
       {!modelsLoaded && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <p className="text-yellow-800">Loading face recognition models...</p>
+        <div className="backdrop-blur-xl bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
+          <p className="text-yellow-300">Loading face recognition models...</p>
         </div>
       )}
 
@@ -203,57 +226,57 @@ const FaceRecognition: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-white rounded-lg shadow-md p-6 mb-6"
+            className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6"
           >
-            <h3 className="text-xl font-semibold mb-4">Add New Person</h3>
+            <h3 className="text-xl font-semibold mb-4 text-blue-50">Add New Person</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
                 <input
                   type="text"
                   required
                   value={newProfile.name}
                   onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-white placeholder-gray-500"
                   placeholder="e.g., Sarah Johnson"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Relationship
                 </label>
                 <input
                   type="text"
                   value={newProfile.relationship}
                   onChange={(e) => setNewProfile({ ...newProfile, relationship: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-white placeholder-gray-500"
                   placeholder="e.g., Daughter, Friend, Doctor"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Notes</label>
                 <textarea
                   value={newProfile.notes}
                   onChange={(e) => setNewProfile({ ...newProfile, notes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-white placeholder-gray-500"
                   rows={2}
                   placeholder="Memory prompts or additional context..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Photo *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Photo *</label>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleFileUpload}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-500 file:text-white hover:file:bg-pink-600"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   Upload a clear photo showing the person's face
                 </p>
               </div>
@@ -263,8 +286,8 @@ const FaceRecognition: React.FC = () => {
       </AnimatePresence>
 
       {/* Camera recognition */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 className="text-xl font-semibold mb-4">Recognize Face</h3>
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4 text-blue-50">Recognize Face</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -272,33 +295,39 @@ const FaceRecognition: React.FC = () => {
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full rounded-lg bg-gray-900"
+              className="w-full rounded-lg bg-gray-900 border border-white/10"
             />
             <canvas ref={canvasRef} className="hidden" />
 
             <div className="flex gap-2 mt-4">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={startCamera}
                 disabled={!modelsLoaded}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Start Camera
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={stopCamera}
-                className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all border border-white/10"
               >
                 Stop Camera
-              </button>
+              </motion.button>
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={recognizeFace}
               disabled={recognizing || !modelsLoaded}
-              className="w-full mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+              className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {recognizing ? 'Recognizing...' : 'Recognize Face'}
-            </button>
+            </motion.button>
           </div>
 
           <div>
@@ -306,21 +335,21 @@ const FaceRecognition: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-green-50 border border-green-200 rounded-lg p-6"
+                className="backdrop-blur-xl bg-green-500/10 border border-green-500/30 rounded-lg p-6"
               >
-                <h4 className="text-2xl font-bold text-green-800 mb-2">
+                <h4 className="text-2xl font-bold text-green-300 mb-2">
                   {recognitionResult.profile.name}
                 </h4>
                 {recognitionResult.profile.relationship && (
-                  <p className="text-green-700 mb-2">
+                  <p className="text-green-400 mb-2">
                     {recognitionResult.profile.relationship}
                   </p>
                 )}
                 {recognitionResult.profile.notes && (
-                  <p className="text-gray-700 mb-4">{recognitionResult.profile.notes}</p>
+                  <p className="text-gray-300 mb-4">{recognitionResult.profile.notes}</p>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Confidence:</span>
+                  <span className="text-sm text-gray-400">Confidence:</span>
                   <span
                     className={`px-2 py-1 rounded text-sm ${
                       recognitionResult.confidence === 'high'
@@ -336,8 +365,8 @@ const FaceRecognition: React.FC = () => {
                 </div>
               </motion.div>
             ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 h-full flex items-center justify-center">
-                <p className="text-gray-500 text-center">
+              <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 h-full flex items-center justify-center">
+                <p className="text-gray-400 text-center">
                   Recognition result will appear here
                 </p>
               </div>
@@ -347,11 +376,11 @@ const FaceRecognition: React.FC = () => {
       </div>
 
       {/* Profiles list */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-xl font-semibold mb-4">Saved Profiles ({profiles.length})</h3>
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
+        <h3 className="text-xl font-semibold mb-4 text-blue-50">Saved Profiles ({profiles.length})</h3>
 
         {profiles.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-gray-400 py-8">
             No profiles yet. Add your first person to get started.
           </p>
         ) : (
@@ -361,26 +390,29 @@ const FaceRecognition: React.FC = () => {
                 key={profile.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="border border-gray-200 rounded-lg p-4"
+                whileHover={{ scale: 1.05 }}
+                className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4 hover:border-pink-500/30 transition-all"
               >
                 {profile.photo_url && (
                   <img
                     src={profile.photo_url}
                     alt={profile.name}
-                    className="w-full h-48 object-cover rounded-lg mb-3"
+                    className="w-full h-48 object-cover rounded-lg mb-3 border border-white/10"
                   />
                 )}
-                <h4 className="text-lg font-semibold text-gray-800">{profile.name}</h4>
+                <h4 className="text-lg font-semibold text-blue-50">{profile.name}</h4>
                 {profile.relationship && (
-                  <p className="text-sm text-gray-600">{profile.relationship}</p>
+                  <p className="text-sm text-gray-400">{profile.relationship}</p>
                 )}
                 {profile.notes && <p className="text-sm text-gray-500 mt-2">{profile.notes}</p>}
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleDeleteProfile(profile.id)}
-                  className="mt-3 w-full px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50 transition-colors"
+                  className="mt-3 w-full px-3 py-1 text-sm text-red-400 border border-red-500/30 rounded hover:bg-red-500/10 transition-colors"
                 >
                   Delete
-                </button>
+                </motion.button>
               </motion.div>
             ))}
           </div>

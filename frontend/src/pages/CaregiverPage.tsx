@@ -3,12 +3,16 @@
  * 
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
  */
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import CaregiverDashboard from '../components/caregiver/CaregiverDashboard';
 import ActivityMonitor from '../components/caregiver/ActivityMonitor';
 import AlertSystem from '../components/caregiver/AlertSystem';
 import ActivityLogViewer from '../components/caregiver/ActivityLogViewer';
+import Scene from '../components/3d/Scene';
+import Starfield from '../components/3d/Starfield';
+import { ArrowLeft, Users, Activity, Bell, FileText } from 'lucide-react';
 
 type TabType = 'dashboard' | 'activity' | 'alerts' | 'log';
 
@@ -19,10 +23,10 @@ const CaregiverPage: React.FC = () => {
   const [patientName] = useState('Patient');
 
   const tabs = [
-    { id: 'dashboard' as TabType, label: 'Dashboard' },
-    { id: 'activity' as TabType, label: 'Activity Monitor', requiresPatient: true },
-    { id: 'alerts' as TabType, label: 'Alerts' },
-    { id: 'log' as TabType, label: 'Activity Log', requiresPatient: true },
+    { id: 'dashboard' as TabType, label: 'Dashboard', icon: Users },
+    { id: 'activity' as TabType, label: 'Activity Monitor', icon: Activity, requiresPatient: true },
+    { id: 'alerts' as TabType, label: 'Alerts', icon: Bell },
+    { id: 'log' as TabType, label: 'Activity Log', icon: FileText, requiresPatient: true },
   ];
 
   const renderContent = () => {
@@ -32,17 +36,23 @@ const CaregiverPage: React.FC = () => {
 
     if (!patientId && (activeTab === 'activity' || activeTab === 'log')) {
       return (
-        <div className="bg-gray-800 rounded-lg p-12 text-center border border-gray-700">
-          <div className="text-gray-400 text-lg mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="backdrop-blur-xl bg-white/5 rounded-2xl p-12 text-center border border-white/10"
+        >
+          <div className="text-gray-300 text-lg mb-4">
             Please select a patient from the dashboard to view their activity
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab('dashboard')}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg"
           >
             Go to Dashboard
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
       );
     }
 
@@ -61,59 +71,122 @@ const CaregiverPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Caregiver Portal</h1>
-              {patientId && (
-                <p className="text-gray-400">
-                  Monitoring: {patientName}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-            >
-              Back to My Dashboard
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* 3D Background Scene */}
+      <div className="fixed inset-0 z-0">
+        <Scene camera={{ position: [0, 0, 8], fov: 75 }} enablePhysics={false}>
+          <Suspense fallback={null}>
+            <Starfield count={200} />
+          </Suspense>
+        </Scene>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex space-x-1">
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate('/dashboard')}
+          className="mb-6 flex items-center gap-2 text-gray-300 hover:text-white transition-colors backdrop-blur-sm bg-white/5 px-4 py-2 rounded-lg border border-white/10"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Dashboard</span>
+        </motion.button>
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <motion.div 
+              className="p-3 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 400 }}
+            >
+              <Users className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-4xl md:text-5xl font-bold text-blue-50">
+              Caregiver Portal
+            </h1>
+          </div>
+          {patientId && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-gray-400"
+            >
+              Monitoring: {patientName}
+            </motion.p>
+          )}
+          {!patientId && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-gray-400 max-w-2xl mx-auto"
+            >
+              Monitor patient activity, receive alerts, and manage care
+            </motion.p>
+          )}
+        </motion.div>
+
+        {/* Tab Navigation with glass morphism */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8 flex justify-center overflow-x-auto px-2"
+        >
+          <div className="inline-flex gap-2 p-2 backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 min-w-min">
             {tabs.map((tab) => {
               const isDisabled = tab.requiresPatient && !patientId;
+              const Icon = tab.icon;
+              
               return (
-                <button
+                <motion.button
                   key={tab.id}
+                  whileHover={!isDisabled ? { scale: 1.05 } : {}}
+                  whileTap={!isDisabled ? { scale: 0.95 } : {}}
                   onClick={() => !isDisabled && setActiveTab(tab.id)}
                   disabled={isDisabled}
-                  className={`px-6 py-4 font-semibold transition-colors ${
+                  className={`relative px-4 sm:px-6 py-3 rounded-xl font-medium transition-all text-sm sm:text-base whitespace-nowrap overflow-hidden flex items-center gap-2 ${
                     activeTab === tab.id
-                      ? 'text-white border-b-2 border-purple-500'
+                      ? 'text-gray-900'
                       : isDisabled
                       ? 'text-gray-600 cursor-not-allowed'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  {tab.label}
-                </button>
+                  {activeTab === tab.id && (
+                    <motion.div
+                      layoutId="activeCaregiverTab"
+                      className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                  <Icon className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">{tab.label}</span>
+                </motion.button>
               );
             })}
           </div>
-        </div>
-      </div>
+        </motion.div>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        {renderContent()}
+        {/* Tab Content with AnimatePresence */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

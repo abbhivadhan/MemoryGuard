@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MedicalInfo, emergencyService } from '../../services/emergencyService';
 
 const MedicalInfoCard: React.FC = () => {
@@ -9,11 +9,15 @@ const MedicalInfoCard: React.FC = () => {
     conditions: [],
     blood_type: '',
     emergency_notes: '',
+    emergency_contacts: [],
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [qrCodeImage, setQrCodeImage] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
 
   // Load medical info on mount
   useEffect(() => {
@@ -66,13 +70,36 @@ const MedicalInfoCard: React.FC = () => {
     });
   };
 
-  const handleGenerateQRCode = () => {
-    // Generate a shareable link with medical info
-    const data = encodeURIComponent(JSON.stringify(medicalInfo));
-    const url = `${window.location.origin}/emergency-info?data=${data}`;
+  const handleGenerateQRCode = async () => {
+    setIsGeneratingQR(true);
+    try {
+      const result = await emergencyService.generateMedicalQRCode();
+      setQrCodeImage(result.qr_code);
+      setShowQRModal(true);
+    } catch (error: any) {
+      console.error('Failed to generate QR code:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+      
+      if (error.response?.status === 401) {
+        alert('Your session has expired. Please log out and log back in, then try again.');
+      } else {
+        alert(`Failed to generate QR code: ${errorMessage}`);
+      }
+    } finally {
+      setIsGeneratingQR(false);
+    }
+  };
+
+  const handleDownloadQR = () => {
+    if (!qrCodeImage) return;
     
-    // In a real implementation, this would generate a QR code
-    alert(`QR Code URL: ${url}\n\nThis would display a QR code that first responders can scan.`);
+    // Create download link
+    const link = document.createElement('a');
+    link.href = qrCodeImage;
+    link.download = 'emergency-medical-qr-code.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -254,6 +281,74 @@ const MedicalInfoCard: React.FC = () => {
         )}
       </div>
 
+      {/* Emergency Contacts */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-300">
+            Emergency Contacts
+          </label>
+          {isEditing && (
+            <button
+              onClick={() => {
+                const name = prompt('Contact Name:');
+                if (!name) return;
+                const phone = prompt('Phone Number:');
+                if (!phone) return;
+                const relationship = prompt('Relationship (optional):');
+                
+                setMedicalInfo({
+                  ...medicalInfo,
+                  emergency_contacts: [
+                    ...(medicalInfo.emergency_contacts || []),
+                    { name, phone, relationship: relationship || '' }
+                  ]
+                });
+              }}
+              className="text-cyan-400 hover:text-cyan-300 text-sm"
+            >
+              + Add Contact
+            </button>
+          )}
+        </div>
+        {medicalInfo.emergency_contacts && medicalInfo.emergency_contacts.length > 0 ? (
+          <ul className="space-y-3">
+            {medicalInfo.emergency_contacts.map((contact, index) => (
+              <li
+                key={index}
+                className="bg-cyan-900 bg-opacity-20 border border-cyan-700 rounded-lg px-4 py-3"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-white font-medium">{contact.name}</p>
+                    <p className="text-cyan-300 text-sm">{contact.phone}</p>
+                    {contact.relationship && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        {contact.relationship}
+                      </p>
+                    )}
+                  </div>
+                  {isEditing && (
+                    <button
+                      onClick={() => {
+                        setMedicalInfo({
+                          ...medicalInfo,
+                          emergency_contacts: medicalInfo.emergency_contacts?.filter((_, i) => i !== index)
+                        });
+                      }}
+                      className="text-red-400 hover:text-red-300 ml-2"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-500 text-sm">No emergency contacts added</p>
+        )}
+      </div>
+
       {/* Emergency Notes */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -299,7 +394,8 @@ const MedicalInfoCard: React.FC = () => {
       ) : (
         <button
           onClick={handleGenerateQRCode}
-          className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+          disabled={isGeneratingQR}
+          className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
             className="h-5 w-5"
@@ -314,8 +410,58 @@ const MedicalInfoCard: React.FC = () => {
               d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
             />
           </svg>
-          Generate QR Code
+          {isGeneratingQR ? 'Generating...' : 'Generate QR Code'}
         </button>
+      )}
+
+      {/* QR Code Modal */}
+      {showQRModal && qrCodeImage && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowQRModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-gray-800 rounded-2xl p-8 max-w-md w-full border border-gray-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-bold text-white mb-4 text-center">
+              Emergency Medical QR Code
+            </h3>
+            
+            <div className="bg-white p-4 rounded-lg mb-6">
+              <img 
+                src={qrCodeImage} 
+                alt="Emergency Medical QR Code" 
+                className="w-full h-auto"
+              />
+            </div>
+
+            <p className="text-gray-300 text-sm mb-6 text-center">
+              Scan this QR code to access emergency medical information. Save it to your phone or print it to carry with you.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadQR}
+                className="flex-1 px-4 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Download
+              </button>
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
       )}
 
       {saveSuccess && (

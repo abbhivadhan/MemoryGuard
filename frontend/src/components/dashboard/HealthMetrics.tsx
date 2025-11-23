@@ -5,6 +5,7 @@ import { useHealthMetrics } from '../../hooks/useHealthMetrics';
 import BrainHealthVisualization from './BrainHealthVisualization';
 import BiomarkerChart3D from './BiomarkerChart3D';
 import ProgressionTimeline3D from './ProgressionTimeline3D';
+import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 
 interface MetricCategory {
   type: string;
@@ -96,15 +97,19 @@ const HealthMetrics: React.FC = () => {
 
   if (!data?.metrics || data.metrics.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-8 text-center">
-        <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-xl font-semibold mb-2">No Health Metrics Yet</h3>
-        <p className="text-gray-400 mb-4">
-          Start tracking your health by adding your first metric
-        </p>
-        <button className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
-          Add Health Metric
-        </button>
+      <div className="bg-gray-800 border border-gray-700 rounded-lg">
+        <EmptyState
+          icon={EmptyStateIcons.NoMetrics}
+          title="No Health Metrics Yet"
+          description="Start tracking your cognitive health by adding your first health metric. Input real data from medical assessments, lab results, or health monitoring devices."
+          action={{
+            label: 'Add Health Metric',
+            onClick: () => {
+              // TODO: Navigate to add metric form or open modal
+              console.log('Add health metric clicked');
+            },
+          }}
+        />
       </div>
     );
   }

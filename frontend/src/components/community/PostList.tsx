@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import communityService, { CommunityPost } from '../../services/communityService';
+import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 
 interface PostListProps {
   category?: string;
@@ -36,7 +37,7 @@ export default function PostList({ category }: PostListProps) {
       questions: 'bg-yellow-100 text-yellow-800',
       resources: 'bg-pink-100 text-pink-800',
     };
-    return colors[cat] || 'bg-gray-100 text-gray-800';
+    return colors[cat] || 'bg-white/10 text-blue-50';
   };
 
   const formatDate = (dateString: string) => {
@@ -71,9 +72,16 @@ export default function PostList({ category }: PostListProps) {
 
   if (posts.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg">No posts yet in this category.</p>
-        <p className="mt-2">Be the first to start a discussion!</p>
+      <div className="bg-gray-800 rounded-lg">
+        <EmptyState
+          icon={EmptyStateIcons.NoPosts}
+          title="No Posts Yet"
+          description="Be the first to start a discussion in this category. Share your experiences, ask questions, or offer support to others in the community."
+          action={{
+            label: 'Create Post',
+            onClick: () => navigate('/community?tab=create'),
+          }}
+        />
       </div>
     );
   }
@@ -84,7 +92,7 @@ export default function PostList({ category }: PostListProps) {
         <div
           key={post.id}
           onClick={() => navigate(`/community/posts/${post.id}`)}
-          className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -103,7 +111,7 @@ export default function PostList({ category }: PostListProps) {
                 {post.title}
               </h3>
               
-              <p className="text-gray-600 line-clamp-2 mb-3">
+              <p className="text-gray-400 line-clamp-2 mb-3">
                 {post.content}
               </p>
               

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import * as THREE from 'three';
 import { mlService, ForecastResponse } from '../../services/mlService';
 import { useAuthStore } from '../../store/authStore';
+import { InlineDisclaimer } from '../ui/MedicalDisclaimer';
 
 interface ProgressionForecastProps {
   userId?: number | string;
@@ -386,14 +387,17 @@ export default function ProgressionForecast({ userId, currentMetrics }: Progress
       </div>
 
       {/* Forecast metadata */}
-      <div className="mt-4 text-xs text-gray-500 text-center">
-        Forecast generated on {new Date(forecast.generated_at).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        })}
+      <div className="mt-4 flex flex-col items-center gap-2">
+        <div className="text-xs text-gray-500 text-center">
+          Forecast generated on {new Date(forecast.generated_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </div>
+        <InlineDisclaimer />
       </div>
     </motion.div>
   );

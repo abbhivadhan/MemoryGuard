@@ -8,6 +8,7 @@ from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime, timedelta
 from uuid import UUID
+import logging
 
 from app.core.database import get_db
 from app.api.dependencies import get_current_user
@@ -23,7 +24,9 @@ from app.schemas.medication import (
     SideEffectCreate,
     InteractionWarning
 )
+from app.core.data_validation import validate_medication, log_validation_warning
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -37,6 +40,21 @@ async def create_medication(
     Create a new medication for the current user.
     Requirements: 13.1
     """
+    # Validate medication data for placeholder/demo data
+    med_dict = {
+        'name': medication_data.name,
+        'dosage': medication_data.dosage,
+        'frequency': medication_data.frequency
+    }
+    is_valid, errors = validate_medication(med_dict)
+    
+    if not is_valid:
+        log_validation_warning('medication', med_dict, errors)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid medication data: {'; '.join(errors)}"
+        )
+    
     medication = Medication(
         user_id=current_user.id,
         name=medication_data.name,

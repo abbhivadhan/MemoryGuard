@@ -20,16 +20,6 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
   const [showCitations, setShowCitations] = useState(false);
   const [trackingToday, setTrackingToday] = useState(false);
 
-  const getCategoryIcon = (category: string) => {
-    const icons: Record<string, string> = {
-      diet: '🥗',
-      exercise: '🏃',
-      sleep: '😴',
-      cognitive: '🧠',
-      social: '👥'
-    };
-    return icons[category] || '📋';
-  };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
@@ -62,7 +52,6 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <span className="text-3xl">{getCategoryIcon(recommendation.category)}</span>
           <div>
             <h3 className="text-xl font-bold text-white">
               {recommendation.title}
@@ -171,7 +160,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({
           onClick={() => onShowTutorial(recommendation.category as any)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          📚 Tutorial
+          Tutorial
         </button>
       </div>
     </div>

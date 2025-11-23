@@ -104,12 +104,12 @@ const CaregiverConfig: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">Caregiver Configuration</h2>
+      <h2 className="text-3xl font-bold text-blue-50 mb-6">Caregiver Configuration</h2>
 
       {/* Alert Settings */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
         <h3 className="text-xl font-semibold mb-4">Alert Settings</h3>
-        <p className="text-gray-600 mb-4">
+        <p className="text-gray-400 mb-4">
           Configure when caregivers should receive alerts about your activities
         </p>
 
@@ -124,8 +124,8 @@ const CaregiverConfig: React.FC = () => {
               className="w-5 h-5 text-blue-500 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-800">Missed Medication</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-medium text-blue-50">Missed Medication</div>
+              <div className="text-sm text-gray-400">
                 Alert when a medication reminder is not completed
               </div>
             </div>
@@ -141,8 +141,8 @@ const CaregiverConfig: React.FC = () => {
               className="w-5 h-5 text-blue-500 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-800">Low Adherence</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-medium text-blue-50">Low Adherence</div>
+              <div className="text-sm text-gray-400">
                 Alert when medication adherence falls below 80% over 7 days
               </div>
             </div>
@@ -158,8 +158,8 @@ const CaregiverConfig: React.FC = () => {
               className="w-5 h-5 text-blue-500 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-800">Missed Routines</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-medium text-blue-50">Missed Routines</div>
+              <div className="text-sm text-gray-400">
                 Alert when 3 or more daily routine items are not completed
               </div>
             </div>
@@ -175,8 +175,8 @@ const CaregiverConfig: React.FC = () => {
               className="w-5 h-5 text-blue-500 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div>
-              <div className="font-medium text-gray-800">Emergency Alerts</div>
-              <div className="text-sm text-gray-600">
+              <div className="font-medium text-blue-50">Emergency Alerts</div>
+              <div className="text-sm text-gray-400">
                 Alert for emergency button activations and concerning patterns
               </div>
             </div>
@@ -192,7 +192,7 @@ const CaregiverConfig: React.FC = () => {
       </div>
 
       {/* Caregiver Management */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Authorized Caregivers</h3>
           <button
@@ -210,38 +210,38 @@ const CaregiverConfig: React.FC = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             onSubmit={handleAddCaregiver}
-            className="bg-gray-50 rounded-lg p-4 mb-6"
+            className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-lg p-4 mb-6"
           >
-            <h4 className="font-semibold mb-3">Add New Caregiver</h4>
+            <h4 className="font-semibold mb-3 text-blue-50">Add New Caregiver</h4>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Name *</label>
                 <input
                   type="text"
                   required
                   value={newCaregiver.name}
                   onChange={(e) => setNewCaregiver({ ...newCaregiver, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Sarah Johnson"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Email *</label>
                 <input
                   type="email"
                   required
                   value={newCaregiver.email}
                   onChange={(e) => setNewCaregiver({ ...newCaregiver, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="caregiver@example.com"
                 />
               </div>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Permissions</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Permissions</label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {Object.entries(newCaregiver.permissions).map(([key, value]) => (
                   <label key={key} className="flex items-center gap-2 cursor-pointer">
@@ -259,7 +259,7 @@ const CaregiverConfig: React.FC = () => {
                       }
                       className="w-4 h-4 text-blue-500 rounded"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-300">
                       {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                     </span>
                   </label>
@@ -271,7 +271,7 @@ const CaregiverConfig: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-white/10 text-gray-300 border border-white/20 rounded-lg hover:bg-white/20 transition-colors"
               >
                 Cancel
               </button>
@@ -287,21 +287,21 @@ const CaregiverConfig: React.FC = () => {
 
         {/* Caregivers list */}
         {caregivers.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-gray-400 py-8">
             No caregivers added yet. Add a caregiver to enable remote monitoring and support.
           </p>
         ) : (
           <div className="space-y-4">
             {caregivers.map((caregiver) => (
-              <div key={caregiver.email} className="border border-gray-200 rounded-lg p-4">
+              <div key={caregiver.email} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-800">{caregiver.name}</h4>
-                    <p className="text-sm text-gray-600">{caregiver.email}</p>
+                    <h4 className="text-lg font-semibold text-blue-50">{caregiver.name}</h4>
+                    <p className="text-sm text-gray-400">{caregiver.email}</p>
                   </div>
                   <button
                     onClick={() => handleRemoveCaregiver(caregiver.email)}
-                    className="px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-50 transition-colors"
+                    className="px-3 py-1 text-sm text-red-400 border border-red-500/50 rounded hover:bg-red-500/20 transition-colors"
                   >
                     Remove
                   </button>
@@ -318,7 +318,7 @@ const CaregiverConfig: React.FC = () => {
                         }
                         className="w-4 h-4 text-blue-500 rounded"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-300">
                         {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                       </span>
                     </label>
@@ -331,9 +331,9 @@ const CaregiverConfig: React.FC = () => {
       </div>
 
       {/* Information box */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-800 mb-2">About Caregiver Access</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
+      <div className="mt-6 backdrop-blur-xl bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <h4 className="font-semibold text-blue-300 mb-2">About Caregiver Access</h4>
+        <ul className="text-sm text-blue-200 space-y-1">
           <li>• Caregivers will receive an email invitation to access your information</li>
           <li>• You can modify or revoke permissions at any time</li>
           <li>• All caregiver access is logged for your security</li>

@@ -2,7 +2,7 @@
 API v1 routes initialization.
 """
 from fastapi import APIRouter
-from app.api.v1 import auth, health, ml, assessments, reminders, routines, faces, medications, emergency, caregivers, exercises, recommendations, community, imaging, providers, rate_limits
+from app.api.v1 import auth, health, ml, assessments, reminders, routines, faces, medications, emergency, caregivers, exercises, recommendations, community, imaging, providers, rate_limits, gemini
 
 # Create main v1 router
 api_router = APIRouter()
@@ -24,5 +24,6 @@ api_router.include_router(community.router, prefix="/community", tags=["communit
 api_router.include_router(imaging.router, prefix="/imaging", tags=["imaging"])
 api_router.include_router(providers.router, prefix="/providers", tags=["providers"])
 api_router.include_router(rate_limits.router)
+api_router.include_router(gemini.router)
 
 __all__ = ["api_router"]

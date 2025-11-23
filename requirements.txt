@@ -1,0 +1,13 @@
+# MemoryGuard Root Requirements
+# 
+# This file is kept for compatibility purposes.
+# For actual backend dependencies, see: backend/requirements.txt
+# For frontend dependencies, see: frontend/package.json
+#
+# To install backend dependencies:
+#   cd backend && pip install -r requirements.txt
+#
+# To install frontend dependencies:
+#   cd frontend && npm install
+
+# Note: This project uses separate dependency management for frontend and backend

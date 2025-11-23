@@ -1,5 +1,6 @@
 """Community post models for forum functionality."""
 from sqlalchemy import Column, String, Text, Boolean, Integer, ForeignKey, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -29,7 +30,7 @@ class CommunityPost(Base):
     __tablename__ = "community_posts"
     
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     category = Column(Enum(PostCategory), nullable=False, default=PostCategory.GENERAL)
@@ -54,7 +55,7 @@ class CommunityReply(Base):
     
     id = Column(String, primary_key=True, index=True)
     post_id = Column(String, ForeignKey("community_posts.id"), nullable=False)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     is_anonymous = Column(Boolean, default=False)
     is_flagged = Column(Boolean, default=False)
@@ -76,7 +77,7 @@ class ContentFlag(Base):
     id = Column(String, primary_key=True, index=True)
     post_id = Column(String, ForeignKey("community_posts.id"), nullable=True)
     reply_id = Column(String, ForeignKey("community_replies.id"), nullable=True)
-    reporter_user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    reporter_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     reason = Column(String(255), nullable=False)
     description = Column(Text)
     status = Column(String(50), default="pending")  # pending, reviewed, resolved

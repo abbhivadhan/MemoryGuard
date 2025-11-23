@@ -57,6 +57,13 @@ class RedisClient:
 # Global Redis client instance
 redis_client = RedisClient()
 
+def get_redis() -> Redis:
+    """
+    Get Redis client instance.
+    Used for dependency injection in FastAPI routes.
+    """
+    return redis_client.client
+
 # Cache utility functions
 def get_cache(key: str) -> Optional[Any]:
     """

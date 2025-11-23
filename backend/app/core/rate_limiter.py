@@ -2,7 +2,7 @@
 Rate limiting middleware and utilities for API endpoints.
 Implements token bucket algorithm using Redis for distributed rate limiting.
 """
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, Any
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
 import time
@@ -17,7 +17,7 @@ class RateLimitConfig:
     """Configuration for rate limiting rules per endpoint."""
     
     # Default rate limits (requests per minute)
-    DEFAULT_LIMIT = 100
+    DEFAULT_LIMIT = settings.RATE_LIMIT_PER_MINUTE
     
     # Endpoint-specific rate limits (requests per minute)
     ENDPOINT_LIMITS: Dict[str, int] = {
@@ -84,7 +84,21 @@ class RateLimiter:
     """
     
     def __init__(self):
-        self.window_seconds = 60  # 1 minute window
+        self.window_seconds = settings.RATE_LIMIT_WINDOW_SECONDS or 60  # default fallback
+    
+    def _rate_limit_info(self, limit: int, remaining: int, reset_time: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Build a standard rate limit metadata payload.
+        """
+        if reset_time is None:
+            reset_time = int(time.time()) + self.window_seconds
+        
+        return {
+            "limit": limit,
+            "remaining": max(0, remaining),
+            "reset": reset_time,
+            "reset_in_seconds": max(0, reset_time - int(time.time()))
+        }
     
     def _get_identifier(self, request: Request, user_id: Optional[str] = None) -> str:
         """
@@ -129,7 +143,7 @@ class RateLimiter:
         self,
         request: Request,
         user_id: Optional[str] = None
-    ) -> Tuple[bool, Dict[str, any]]:
+    ) -> Tuple[bool, Dict[str, Any]]:
         """
         Check if request is within rate limit using token bucket algorithm.
         
@@ -141,10 +155,14 @@ class RateLimiter:
             Tuple of (is_allowed, rate_limit_info)
             rate_limit_info contains: limit, remaining, reset_time
         """
+        limit = RateLimitConfig.get_limit_for_endpoint(request.url.path)
+
+        if not settings.RATE_LIMIT_ENABLED:
+            return True, self._rate_limit_info(limit, limit)
+
         try:
             identifier = self._get_identifier(request, user_id)
             endpoint = request.url.path
-            limit = RateLimitConfig.get_limit_for_endpoint(endpoint)
             
             redis_key = self._get_redis_key(identifier, endpoint)
             current_time = int(time.time())
@@ -172,12 +190,7 @@ class RateLimiter:
             remaining = max(0, limit - request_count - 1)
             reset_time = current_time + self.window_seconds
             
-            rate_limit_info = {
-                "limit": limit,
-                "remaining": remaining,
-                "reset": reset_time,
-                "reset_in_seconds": self.window_seconds
-            }
+            rate_limit_info = self._rate_limit_info(limit, remaining, reset_time)
             
             # Check if limit exceeded
             if request_count >= limit:
@@ -192,12 +205,7 @@ class RateLimiter:
         except Exception as e:
             logger.error(f"Error checking rate limit: {e}", exc_info=True)
             # On error, allow the request (fail open)
-            return True, {
-                "limit": limit,
-                "remaining": limit,
-                "reset": int(time.time()) + self.window_seconds,
-                "reset_in_seconds": self.window_seconds
-            }
+            return True, self._rate_limit_info(limit, limit)
     
     def reset_rate_limit(self, identifier: str, endpoint: str) -> bool:
         """
@@ -236,6 +244,9 @@ async def rate_limit_middleware(request: Request, call_next):
     Returns:
         Response or rate limit error
     """
+    if not settings.RATE_LIMIT_ENABLED:
+        return await call_next(request)
+    
     # Skip rate limiting for health check and root endpoints
     if request.url.path in ["/", "/health", "/docs", "/openapi.json", "/redoc"]:
         return await call_next(request)
@@ -275,7 +286,7 @@ async def rate_limit_middleware(request: Request, call_next):
     return response
 
 
-def get_rate_limit_info(request: Request, user_id: Optional[str] = None) -> Dict[str, any]:
+def get_rate_limit_info(request: Request, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Get current rate limit information for a request without incrementing counter.
     Useful for displaying rate limit status to users.
@@ -287,6 +298,10 @@ def get_rate_limit_info(request: Request, user_id: Optional[str] = None) -> Dict
     Returns:
         Dictionary with rate limit information
     """
+    if not settings.RATE_LIMIT_ENABLED:
+        limit = RateLimitConfig.get_limit_for_endpoint(request.url.path)
+        return rate_limiter._rate_limit_info(limit, limit)
+
     try:
         identifier = rate_limiter._get_identifier(request, user_id)
         endpoint = request.url.path

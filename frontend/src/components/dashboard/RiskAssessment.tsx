@@ -4,6 +4,8 @@ import { OrbitControls, Text, Sphere, Ring } from '@react-three/drei';
 import { motion } from 'framer-motion';
 import { mlService, PredictionResponse } from '../../services/mlService';
 import { useAuthStore } from '../../store/authStore';
+import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
+import MedicalDisclaimer from '../ui/MedicalDisclaimer';
 
 interface RiskAssessmentProps {
   userId?: number | string;
@@ -144,11 +146,19 @@ export default function RiskAssessment({ userId, prediction: externalPrediction 
 
   if (!prediction) {
     return (
-      <div className="bg-gray-800 rounded-lg p-6">
-        <div className="text-center text-gray-400">
-          <p className="mb-4">No risk assessment available</p>
-          <p className="text-sm">Complete health metrics and cognitive assessments to generate a risk assessment.</p>
-        </div>
+      <div className="bg-gray-800 rounded-lg">
+        <EmptyState
+          icon={EmptyStateIcons.NoPredictions}
+          title="No Risk Assessment Available"
+          description="Complete health metrics and cognitive assessments to generate a personalized risk assessment. Real data from medical tests and assessments is required for accurate analysis."
+          action={{
+            label: 'Add Health Data',
+            onClick: () => {
+              // TODO: Navigate to health metrics or assessment page
+              console.log('Add health data clicked');
+            },
+          }}
+        />
       </div>
     );
   }
@@ -193,7 +203,7 @@ export default function RiskAssessment({ userId, prediction: externalPrediction 
                   riskLevel.toLowerCase() === 'low' ? 'bg-green-500' :
                   riskLevel.toLowerCase() === 'moderate' ? 'bg-amber-500' :
                   riskLevel.toLowerCase() === 'high' ? 'bg-red-500' :
-                  'bg-gray-500'
+                  'bg-white/50'
                 }`}
               />
               <span className="text-xl font-bold text-white capitalize">{riskLevel}</span>
@@ -266,13 +276,9 @@ export default function RiskAssessment({ userId, prediction: externalPrediction 
         </div>
       </div>
 
-      {/* Disclaimer */}
-      <div className="mt-6 p-4 bg-amber-900/20 border border-amber-700/50 rounded-lg">
-        <p className="text-sm text-amber-200">
-          <strong>Medical Disclaimer:</strong> This risk assessment is for informational purposes only 
-          and should not be used as a substitute for professional medical advice, diagnosis, or treatment. 
-          Always consult with a qualified healthcare professional.
-        </p>
+      {/* Medical Disclaimer */}
+      <div className="mt-6">
+        <MedicalDisclaimer type="prediction" compact />
       </div>
     </motion.div>
   );

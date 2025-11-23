@@ -130,8 +130,8 @@ export default function ScrollSection({
                   key={i}
                   className={`h-1 rounded-full transition-all duration-500 ${
                     i === activeSection 
-                      ? 'w-16 bg-indigo-500' 
-                      : 'w-8 bg-gray-600'
+                      ? 'w-16 bg-cyan-400' 
+                      : 'w-8 bg-gray-700'
                   }`}
                 />
               ))}

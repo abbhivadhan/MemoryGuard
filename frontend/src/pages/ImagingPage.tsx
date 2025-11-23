@@ -2,8 +2,10 @@
  * Medical Imaging Page
  * Upload and analyze brain MRI scans
  */
-import React, { useState, useEffect } from 'react';
-import { Brain, Upload, Activity, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { Brain, Upload, Activity, AlertTriangle, ArrowLeft, Camera } from 'lucide-react';
 import ImagingUpload from '../components/imaging/ImagingUpload';
 import BrainVisualization3D from '../components/imaging/BrainVisualization3D';
 import {
@@ -11,6 +13,8 @@ import {
   getUserImagingStudies
 } from '../services/imagingService';
 import { useAuthStore } from '../store/authStore';
+import Scene from '../components/3d/Scene';
+import Starfield from '../components/3d/Starfield';
 
 const ImagingPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -49,19 +53,53 @@ const ImagingPage: React.FC = () => {
     setShowUpload(false);
   };
 
+  const navigate = useNavigate();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* 3D Background Scene */}
+      <div className="fixed inset-0 z-0">
+        <Scene camera={{ position: [0, 0, 8], fov: 75 }} enablePhysics={false}>
+          <Suspense fallback={null}>
+            <Starfield count={200} />
+          </Suspense>
+        </Scene>
+      </div>
+
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate('/dashboard')}
+          className="mb-6 flex items-center gap-2 text-gray-300 hover:text-white transition-colors backdrop-blur-sm bg-white/5 px-4 py-2 rounded-lg border border-white/10"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Dashboard</span>
+        </motion.button>
+
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Brain className="w-10 h-10 text-purple-400" />
-            <h1 className="text-4xl font-bold">Medical Imaging Analysis</h1>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <motion.div 
+              className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 400 }}
+            >
+              <Camera className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-4xl md:text-5xl font-bold text-blue-50">
+              Medical Imaging Analysis
+            </h1>
           </div>
-          <p className="text-gray-300 text-lg">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             Upload and analyze brain MRI scans for volumetric measurements and atrophy detection
           </p>
-        </div>
+        </motion.div>
 
         {/* Upload Section */}
         {showUpload ? (

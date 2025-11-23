@@ -30,11 +30,41 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    DATA_ENCRYPTION_KEY: Optional[str] = None
+    AUDIT_LOG_PATH: str = "./logs/audit.log"
+    INPUT_VALIDATION_ENABLED: bool = True
+    MAX_JSON_PAYLOAD_BYTES: int = 512 * 1024  # 512KB
+    MAX_INPUT_STRING_LENGTH: int = 10_000
+    CONTENT_SECURITY_POLICY: str = (
+        "default-src 'self'; "
+        "img-src 'self' data: blob:; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self' data:; "
+        "connect-src 'self' https://www.googleapis.com https://oauth2.googleapis.com; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    PERMISSIONS_POLICY: str = (
+        "geolocation=(), camera=(), microphone=(), display-capture=(), "
+        "fullscreen=(self), payment=()"
+    )
+    REFERRER_POLICY: str = "strict-origin-when-cross-origin"
     
     # Google OAuth
     GOOGLE_CLIENT_ID: Optional[str] = None
     GOOGLE_CLIENT_SECRET: Optional[str] = None
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
+    
+    # Google Gemini AI
+    GEMINI_API_KEY: Optional[str] = None
+    GEMINI_MODEL: str = "gemini-pro"
+    GEMINI_MAX_TOKENS: int = 2048
+    GEMINI_TEMPERATURE: float = 0.7
+    GEMINI_RATE_LIMIT_PER_MINUTE: int = 60
+    GEMINI_TIMEOUT_SECONDS: int = 30
+    GEMINI_MAX_RETRIES: int = 3
     
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
@@ -64,6 +94,12 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    
+    # Sentry Error Tracking
+    SENTRY_DSN: Optional[str] = None
+    SENTRY_ENABLED: bool = False
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1  # 10% of transactions
+    SENTRY_PROFILES_SAMPLE_RATE: float = 0.1  # 10% of transactions
     
     class Config:
         env_file = ".env"
@@ -104,6 +140,9 @@ class Settings(BaseSettings):
             
             if not self.GOOGLE_CLIENT_ID or not self.GOOGLE_CLIENT_SECRET:
                 errors.append("Google OAuth credentials are required in production")
+            
+            if not self.GEMINI_API_KEY:
+                errors.append("GEMINI_API_KEY is required in production")
             
             if self.DEBUG:
                 errors.append("DEBUG should be False in production")

@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMyPatients, PatientSummary } from '../../services/providerService';
 import { Users, Search, Calendar, Activity } from 'lucide-react';
+import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 
 const PatientList: React.FC = () => {
   const navigate = useNavigate();
@@ -127,16 +128,16 @@ const PatientList: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-12 border border-white/20 text-center">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
-              {searchTerm ? 'No patients found' : 'No patients yet'}
-            </h3>
-            <p className="text-gray-400">
-              {searchTerm
-                ? 'Try adjusting your search terms'
-                : 'Patients will appear here once they grant you access'}
-            </p>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+            <EmptyState
+              icon={EmptyStateIcons.NoPatients}
+              title={searchTerm ? 'No Patients Found' : 'No Patients Yet'}
+              description={
+                searchTerm
+                  ? 'Try adjusting your search terms to find the patient you\'re looking for.'
+                  : 'Patients will appear here once they grant you access to their health data. Share your provider ID with patients to get started.'
+              }
+            />
           </div>
         )}
       </div>

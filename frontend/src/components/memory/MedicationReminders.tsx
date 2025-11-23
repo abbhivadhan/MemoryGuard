@@ -150,7 +150,7 @@ const MedicationReminders: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-3xl font-bold text-gray-800">Medication Reminders</h2>
+        <h2 className="text-3xl font-bold text-blue-50">Medication Reminders</h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -167,13 +167,13 @@ const MedicationReminders: React.FC = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             onSubmit={createMedicationReminders}
-            className="bg-white rounded-lg shadow-md p-6 mb-6"
+            className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6"
           >
             <h3 className="text-xl font-semibold mb-4">Add Medication Schedule</h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Medication Name *
                 </label>
                 <input
@@ -183,25 +183,25 @@ const MedicationReminders: React.FC = () => {
                   onChange={(e) =>
                     setNewMedication({ ...newMedication, medication_name: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., Aspirin"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Dosage *</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Dosage *</label>
                 <input
                   type="text"
                   required
                   value={newMedication.dosage}
                   onChange={(e) => setNewMedication({ ...newMedication, dosage: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="e.g., 100mg"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Reminder Times *
                 </label>
                 {newMedication.times.map((time, index) => (
@@ -211,7 +211,7 @@ const MedicationReminders: React.FC = () => {
                       required
                       value={time}
                       onChange={(e) => updateTimeSlot(index, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-3 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     {newMedication.times.length > 1 && (
                       <button
@@ -227,14 +227,14 @@ const MedicationReminders: React.FC = () => {
                 <button
                   type="button"
                   onClick={addTimeSlot}
-                  className="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="mt-2 px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   + Add Time
                 </button>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Days of Week
                 </label>
                 <div className="flex gap-2">
@@ -259,7 +259,7 @@ const MedicationReminders: React.FC = () => {
                       className={`px-3 py-2 rounded-lg transition-colors ${
                         newMedication.days.includes(index)
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-700'
+                          : 'bg-gray-200 text-gray-300'
                       }`}
                     >
                       {day}
@@ -273,7 +273,7 @@ const MedicationReminders: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Cancel
               </button>
@@ -295,7 +295,7 @@ const MedicationReminders: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-gray-500 bg-white rounded-lg shadow-md"
+              className="text-center py-12 text-gray-500 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
             >
               <p className="text-xl mb-2">No medication reminders</p>
               <p className="text-sm">Add your first medication to get started</p>
@@ -307,7 +307,7 @@ const MedicationReminders: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${
+                className={`backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4 border-l-4 ${
                   reminder.is_completed ? 'border-green-500 opacity-60' : 'border-blue-500'
                 }`}
               >
@@ -318,21 +318,21 @@ const MedicationReminders: React.FC = () => {
                       <span className="px-2 py-1 rounded text-xs text-white bg-blue-500">
                         Medication
                       </span>
-                      <span className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-700">
+                      <span className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-300">
                         {reminder.frequency}
                       </span>
                     </div>
 
                     <h3
                       className={`text-lg font-semibold mb-1 ${
-                        reminder.is_completed ? 'line-through text-gray-500' : 'text-gray-800'
+                        reminder.is_completed ? 'line-through text-gray-500' : 'text-blue-50'
                       }`}
                     >
                       {reminder.title}
                     </h3>
 
                     {reminder.description && (
-                      <p className="text-gray-600 text-sm mb-2">{reminder.description}</p>
+                      <p className="text-gray-400 text-sm mb-2">{reminder.description}</p>
                     )}
 
                     <div className="flex items-center gap-4 text-sm text-gray-500">

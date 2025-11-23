@@ -451,3 +451,155 @@ async def send_pattern_alerts(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to send pattern alerts: {str(e)}"
         )
+
+
+@router.get("/medical-info", response_model=dict)
+async def get_medical_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get the user's stored medical information for emergencies.
+    """
+    # Get the most recent medical info from emergency alerts
+    latest_alert = db.query(EmergencyAlert).filter(
+        EmergencyAlert.user_id == current_user.id,
+        EmergencyAlert.medical_info.isnot(None)
+    ).order_by(desc(EmergencyAlert.created_at)).first()
+    
+    if latest_alert and latest_alert.medical_info:
+        return latest_alert.medical_info
+    
+    return {
+        "medications": [],
+        "allergies": [],
+        "conditions": [],
+        "blood_type": "",
+        "emergency_notes": ""
+    }
+
+
+@router.put("/medical-info", response_model=dict)
+async def update_medical_info(
+    medical_info: MedicalInfo,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Update the user's medical information for emergencies.
+    Stores it by creating/updating an emergency alert record.
+    """
+    # Create a new alert record to store the medical info
+    # This allows us to track history of medical info changes
+    alert = EmergencyAlert(
+        user_id=current_user.id,
+        medical_info=medical_info.dict(),
+        is_active=False,  # Not an active alert, just storing info
+        trigger_type="manual",
+        notes="Medical information update"
+    )
+    
+    db.add(alert)
+    db.commit()
+    db.refresh(alert)
+    
+    return alert.medical_info
+
+
+@router.post("/medical-info/qr-code", response_model=dict)
+async def generate_medical_qr_code(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate a QR code for the user's emergency medical information.
+    Returns a base64 encoded image that can be displayed or downloaded.
+    """
+    try:
+        from app.services.qr_service import generate_medical_info_qr
+        from app.core.config import settings
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"Generating QR code for user {current_user.id}")
+        
+        # Get user's medical info from the database
+        # First, get the most recent medical info from emergency alerts
+        latest_alert = db.query(EmergencyAlert).filter(
+            EmergencyAlert.user_id == current_user.id,
+            EmergencyAlert.medical_info.isnot(None)
+        ).order_by(desc(EmergencyAlert.created_at)).first()
+        
+        # Get emergency contacts
+        emergency_contacts = db.query(EmergencyContact).filter(
+            EmergencyContact.user_id == current_user.id,
+            EmergencyContact.active == True
+        ).order_by(EmergencyContact.priority).all()
+        
+        # Get active medications
+        from app.models.medication import Medication
+        medications = db.query(Medication).filter(
+            Medication.user_id == current_user.id,
+            Medication.active == True
+        ).all()
+        
+        # Build comprehensive medical info
+        medical_info = {
+            "user_id": str(current_user.id),
+            "name": current_user.name,
+            "email": current_user.email,
+            "emergency_contacts": [
+                {
+                    "name": contact.name,
+                    "phone": contact.phone,
+                    "relationship": contact.relationship_type,
+                    "email": contact.email
+                }
+                for contact in emergency_contacts
+            ],
+            "medications": [
+                {
+                    "name": med.name,
+                    "dosage": med.dosage,
+                    "frequency": med.frequency
+                }
+                for med in medications
+            ]
+        }
+        
+        # Add medical info from latest alert if available
+        if latest_alert and latest_alert.medical_info:
+            if isinstance(latest_alert.medical_info, dict):
+                medical_info.update({
+                    "allergies": latest_alert.medical_info.get("allergies", []),
+                    "conditions": latest_alert.medical_info.get("conditions", []),
+                    "blood_type": latest_alert.medical_info.get("blood_type", ""),
+                    "medical_notes": latest_alert.medical_info.get("emergency_notes", "")
+                })
+        
+        # Generate base URL
+        base_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        logger.info(f"Using base URL: {base_url}")
+        
+        # Generate QR code
+        qr_code_data = generate_medical_info_qr(
+            medical_info=medical_info,
+            user_id=str(current_user.id),
+            base_url=base_url
+        )
+        
+        logger.info("QR code generated successfully")
+        
+        return {
+            "qr_code": qr_code_data,
+            "url": f"{base_url}/emergency-info/{current_user.id}",
+            "message": "QR code generated successfully"
+        }
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error generating QR code: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate QR code: {str(e)}"
+        )

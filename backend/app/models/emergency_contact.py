@@ -5,6 +5,7 @@ from sqlalchemy import Column, String, Boolean, Enum as SQLEnum, ForeignKey, Ind
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.models.base import BaseModel
+from app.core.encryption import EncryptedString
 import enum
 
 
@@ -34,13 +35,13 @@ class EmergencyContact(BaseModel):
     )
     
     # Contact information
-    name = Column(String, nullable=False)
-    phone = Column(String, nullable=False)
-    email = Column(String, nullable=True)
+    name = Column(EncryptedString(length=255), nullable=False)
+    phone = Column(EncryptedString(length=255), nullable=False)
+    email = Column(EncryptedString(length=255), nullable=True)
     
     # Relationship type
     relationship_type = Column(SQLEnum(RelationshipType), nullable=False)
-    relationship_description = Column(String, nullable=True)  # Additional details
+    relationship_description = Column(EncryptedString(length=512), nullable=True)  # Additional details
     
     # Priority (1 = primary contact)
     priority = Column(String, nullable=False, default="1")
@@ -49,8 +50,8 @@ class EmergencyContact(BaseModel):
     active = Column(Boolean, nullable=False, default=True)
     
     # Additional information
-    address = Column(String, nullable=True)
-    notes = Column(String, nullable=True)
+    address = Column(EncryptedString(length=512), nullable=True)
+    notes = Column(EncryptedString(length=1024), nullable=True)
     
     # Relationship to user
     user = relationship("User", backref="emergency_contacts_list")
@@ -62,7 +63,10 @@ class EmergencyContact(BaseModel):
     )
     
     def __repr__(self):
-        return f"<EmergencyContact(id={self.id}, user_id={self.user_id}, name={self.name}, relationship={self.relationship})>"
+        return (
+            f"<EmergencyContact(id={self.id}, user_id={self.user_id}, "
+            f"name={self.name}, relationship={self.relationship_type})>"
+        )
     
     def to_dict(self):
         """Convert emergency contact to dictionary"""
@@ -72,7 +76,7 @@ class EmergencyContact(BaseModel):
             "name": self.name,
             "phone": self.phone,
             "email": self.email,
-            "relationship": self.relationship.value,
+            "relationship": self.relationship_type.value,
             "relationship_description": self.relationship_description,
             "priority": self.priority,
             "active": self.active,

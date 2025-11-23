@@ -39,7 +39,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+    <form onSubmit={handleSubmit} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Post</h2>
 
       {error && (
@@ -50,7 +50,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
 
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Title
           </label>
           <input
@@ -64,7 +64,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Category
           </label>
           <select
@@ -81,7 +81,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-2">
             Content
           </label>
           <textarea
@@ -113,7 +113,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

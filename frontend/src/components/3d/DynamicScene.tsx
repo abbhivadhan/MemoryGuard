@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import BrainModel from './BrainModel';
 import DNAHelix from './DNAHelix';
-import FloatingOrbs from './FloatingOrbs';
 import NeuralNetwork from './NeuralNetwork';
 
 interface DynamicSceneProps {
@@ -26,30 +25,26 @@ export default function DynamicScene({ section, deterioration }: DynamicScenePro
         <BrainModel position={[0, 0, 0]} deterioration={deterioration} />
       </group>
 
-      {/* Scene 1: Understanding - DNA Helix with orbs */}
+      {/* Scene 1: Understanding - DNA Helix */}
       <group visible={currentScene === 1}>
         <DNAHelix position={[0, 0, 0]} scale={1} />
-        <FloatingOrbs count={15} />
       </group>
 
       {/* Scene 2: Detection - Neural Network */}
       <group visible={currentScene === 2}>
         <NeuralNetwork position={[0, 0, 0]} nodeCount={70} />
-        <FloatingOrbs count={10} />
       </group>
 
       {/* Scene 3: Progression - Combined visualization */}
       <group visible={currentScene === 3}>
         <BrainModel position={[0, 0, 0]} deterioration={0.5} />
         <NeuralNetwork position={[0, 0, 0]} nodeCount={50} />
-        <FloatingOrbs count={12} />
       </group>
 
       {/* Scene 4: Solution - Full system */}
       <group visible={currentScene >= 4}>
         <BrainModel position={[0, 0, 0]} deterioration={0} />
         <DNAHelix position={[3, 0, 0]} scale={0.7} />
-        <FloatingOrbs count={15} />
       </group>
     </>
   );

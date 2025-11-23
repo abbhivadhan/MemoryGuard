@@ -26,7 +26,7 @@ export default function ScrollIndicator({ onClick }: ScrollIndicatorProps) {
       aria-label="Scroll down for more information"
     >
       <svg
-        className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors animate-bounce"
+        className="w-8 h-8 text-cyan-400 group-hover:text-cyan-300 transition-colors animate-bounce"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

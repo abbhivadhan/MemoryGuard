@@ -315,3 +315,127 @@ async def ml_health_check():
             'error': str(e),
             'timestamp': datetime.utcnow()
         }
+
+
+@router.post("/model/reload")
+async def reload_model(
+    version: Optional[str] = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Reload ML models from registry.
+    
+    If version is specified, loads that specific version.
+    Otherwise, loads the production model or latest model.
+    
+    Requires admin privileges.
+    """
+    # Check admin permission
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    try:
+        from app.ml.model_registry import get_model_registry
+        
+        registry = get_model_registry()
+        
+        if version:
+            # Load specific version
+            model_info = registry.get_model_info(version)
+            if not model_info:
+                raise HTTPException(status_code=404, detail=f"Model version {version} not found")
+        else:
+            # Load production or latest
+            model_info = registry.get_production_model()
+            if not model_info:
+                model_info = registry.get_latest_model()
+            
+            if not model_info:
+                raise HTTPException(status_code=404, detail="No models available")
+        
+        # Reload ML service (this will load the new model)
+        ml_service = MLService(db)
+        
+        return {
+            'status': 'success',
+            'message': f"Model {model_info['version']} loaded successfully",
+            'version': model_info['version'],
+            'model_status': model_info['status']
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reloading model: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to reload model: {str(e)}")
+
+
+@router.get("/model/registry")
+async def get_model_registry_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get model registry information.
+    
+    Returns list of all registered models and their status.
+    """
+    try:
+        from app.ml.model_registry import get_model_registry
+        
+        registry = get_model_registry()
+        summary = registry.get_registry_summary()
+        models = registry.list_models()
+        
+        return {
+            'summary': summary,
+            'models': models
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching registry info: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch registry info")
+
+
+@router.post("/model/promote/{version}")
+async def promote_model(
+    version: str,
+    environment: str,  # 'staging' or 'production'
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Promote a model version to staging or production.
+    
+    Requires admin privileges.
+    """
+    # Check admin permission
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    if environment not in ['staging', 'production']:
+        raise HTTPException(status_code=400, detail="Environment must be 'staging' or 'production'")
+    
+    try:
+        from app.ml.model_registry import get_model_registry
+        
+        registry = get_model_registry()
+        
+        if environment == 'staging':
+            registry.promote_to_staging(version)
+        else:
+            registry.promote_to_production(version)
+        
+        return {
+            'status': 'success',
+            'message': f"Model {version} promoted to {environment}",
+            'version': version,
+            'environment': environment
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error promoting model: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to promote model: {str(e)}")

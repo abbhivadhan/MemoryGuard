@@ -75,7 +75,7 @@ const DrugInteractionChecker: React.FC = () => {
       case 'low':
         return 'bg-blue-100 border-blue-500 text-blue-800';
       default:
-        return 'bg-gray-100 border-gray-500 text-gray-800';
+        return 'bg-gray-100 border-gray-500 text-blue-50';
     }
   };
 
@@ -105,22 +105,22 @@ const DrugInteractionChecker: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Drug Interaction Checker</h2>
-        <p className="text-gray-600">
+        <h2 className="text-3xl font-bold text-blue-50 mb-2">Drug Interaction Checker</h2>
+        <p className="text-gray-400">
           Check for potential interactions between your medications
         </p>
       </div>
 
       {medications.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12 text-gray-500 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg">
           <p className="text-xl mb-2">No active medications</p>
           <p className="text-sm">Add medications to check for interactions</p>
         </div>
       ) : (
         <>
           {/* Medication selection */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+          <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold text-blue-50 mb-4">
               Select Medications to Check
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
@@ -140,15 +140,15 @@ const DrugInteractionChecker: React.FC = () => {
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <div className="ml-3 flex-1">
-                    <p className="font-medium text-gray-800">{med.name}</p>
-                    <p className="text-sm text-gray-600">{med.dosage}</p>
+                    <p className="font-medium text-blue-50">{med.name}</p>
+                    <p className="text-sm text-gray-400">{med.dosage}</p>
                   </div>
                 </label>
               ))}
             </div>
 
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-400">
                 {selectedMeds.length} medication{selectedMeds.length !== 1 ? 's' : ''} selected
               </p>
               <button
@@ -173,8 +173,8 @@ const DrugInteractionChecker: React.FC = () => {
 
           {/* Interaction warnings */}
           {lastChecked && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Interaction Results</h3>
+            <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-blue-50 mb-4">Interaction Results</h3>
 
               {warnings.length === 0 ? (
                 <div className="text-center py-8">
@@ -182,7 +182,7 @@ const DrugInteractionChecker: React.FC = () => {
                   <p className="text-xl font-semibold text-green-600 mb-2">
                     No Known Interactions
                   </p>
-                  <p className="text-gray-600">
+                  <p className="text-gray-400">
                     No significant interactions were found between the selected medications.
                   </p>
                   <p className="text-sm text-gray-500 mt-4">

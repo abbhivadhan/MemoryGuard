@@ -7,6 +7,11 @@ export interface MedicalInfo {
   conditions?: string[];
   blood_type?: string;
   emergency_notes?: string;
+  emergency_contacts?: Array<{
+    name: string;
+    phone: string;
+    relationship?: string;
+  }>;
 }
 
 export interface EmergencyAlert {
@@ -133,18 +138,24 @@ class EmergencyService {
    * Get medical information for emergency
    */
   async getMedicalInfo(): Promise<MedicalInfo> {
-    // This would fetch from user profile or health records
-    // For now, return empty object
-    return {};
+    const response = await api.get('/emergency/medical-info');
+    return response.data;
   }
 
   /**
    * Update medical information
    */
   async updateMedicalInfo(medicalInfo: MedicalInfo): Promise<MedicalInfo> {
-    // This would update user profile or health records
-    // For now, just return the input
-    return medicalInfo;
+    const response = await api.put('/emergency/medical-info', medicalInfo);
+    return response.data;
+  }
+
+  /**
+   * Generate QR code for emergency medical information
+   */
+  async generateMedicalQRCode(): Promise<{ qr_code: string; url: string; message: string }> {
+    const response = await api.post('/emergency/medical-info/qr-code');
+    return response.data;
   }
 }
 

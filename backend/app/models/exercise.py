@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey, JSON, Enum as SQLEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -38,7 +39,7 @@ class ExercisePerformance(Base):
     __tablename__ = "exercise_performances"
 
     id = Column(String, primary_key=True, index=True)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     exercise_id = Column(String, ForeignKey("exercises.id"), nullable=False)
     difficulty = Column(SQLEnum(DifficultyLevel), nullable=False)
     score = Column(Float, nullable=False)

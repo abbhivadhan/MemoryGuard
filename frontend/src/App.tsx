@@ -9,7 +9,6 @@ import { useAuthStore } from './store/authStore';
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const MemoryAssistantPage = lazy(() => import('./pages/MemoryAssistantPage'));
 const EmergencyPage = lazy(() => import('./pages/EmergencyPage'));
 const CaregiverPage = lazy(() => import('./pages/CaregiverPage'));
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
@@ -19,6 +18,11 @@ const PostDetail = lazy(() => import('./components/community/PostDetail'));
 const ImagingPage = lazy(() => import('./pages/ImagingPage'));
 const ProviderPortalPage = lazy(() => import('./pages/ProviderPortalPage'));
 const AccessManagement = lazy(() => import('./components/provider/AccessManagement'));
+const MemoryAssistantPage = lazy(() => import('./pages/MemoryAssistantPage'));
+const MedicationsPage = lazy(() => import('./pages/MedicationsPage'));
+const FaceRecognitionPage = lazy(() => import('./pages/FaceRecognitionPage'));
+const AssessmentPage = lazy(() => import('./pages/AssessmentPage'));
+const CaregiversPage = lazy(() => import('./pages/CaregiversPage'));
 
 // Create a client
 const queryClient = new QueryClient({
@@ -57,17 +61,6 @@ function AppContent() {
               <>
                 <EmergencyWrapper />
                 <DashboardPage />
-              </>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/memory-assistant"
-          element={
-            <ProtectedRoute>
-              <>
-                <EmergencyWrapper />
-                <MemoryAssistantPage />
               </>
             </ProtectedRoute>
           }
@@ -153,6 +146,61 @@ function AppContent() {
               <>
                 <EmergencyWrapper />
                 <ImagingPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/memory-assistant"
+          element={
+            <ProtectedRoute>
+              <>
+                <EmergencyWrapper />
+                <MemoryAssistantPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/medications"
+          element={
+            <ProtectedRoute>
+              <>
+                <EmergencyWrapper />
+                <MedicationsPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/face-recognition"
+          element={
+            <ProtectedRoute>
+              <>
+                <EmergencyWrapper />
+                <FaceRecognitionPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assessment"
+          element={
+            <ProtectedRoute>
+              <>
+                <EmergencyWrapper />
+                <AssessmentPage />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/caregivers"
+          element={
+            <ProtectedRoute>
+              <>
+                <EmergencyWrapper />
+                <CaregiversPage />
               </>
             </ProtectedRoute>
           }

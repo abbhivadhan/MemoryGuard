@@ -21,6 +21,10 @@ passlib[bcrypt]>=1.7.4
 google-auth>=2.27.0
 google-auth-oauthlib>=1.2.0
 
+# Google Gemini AI
+google-generativeai>=0.3.0
+tenacity>=8.2.3
+
 # ML and Data Science
 scikit-learn>=1.4.0
 xgboost>=2.0.3
@@ -44,3 +48,11 @@ flower>=2.0.1
 python-dotenv>=1.0.0
 httpx>=0.26.0
 aiofiles>=23.2.1
+psutil>=5.9.0
+
+# Error Tracking
+sentry-sdk[fastapi]>=2.0.0
+
+# QR Code Generation
+qrcode[pil]>=7.4.2
+Pillow>=10.0.0

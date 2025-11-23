@@ -1,106 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
+import { motion, AnimatePresence } from 'framer-motion';
 import MedicalInfoCard from '../components/emergency/MedicalInfoCard';
 import SafeReturnHome from '../components/emergency/SafeReturnHome';
 import AlertSettings from '../components/emergency/AlertSettings';
+import Scene from '../components/3d/Scene';
+import Starfield from '../components/3d/Starfield';
+import { AlertCircle, ArrowLeft, Shield, MapPin, Bell, CheckCircle } from 'lucide-react';
 
 type TabType = 'medical-info' | 'navigation' | 'alerts';
 
 const EmergencyPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('medical-info');
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <nav className="bg-gray-800 border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-8">
-              <h1 className="text-xl font-bold">MemoryGuard</h1>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Dashboard
-                </button>
-                <button
-                  onClick={() => navigate('/memory-assistant')}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  Memory Assistant
-                </button>
-                <button
-                  onClick={() => navigate('/emergency')}
-                  className="text-white font-semibold"
-                >
-                  Emergency
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-400">{user?.name || user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors text-sm"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* 3D Background Scene */}
+      <div className="fixed inset-0 z-0">
+        <Scene camera={{ position: [0, 0, 8], fov: 75 }} enablePhysics={false}>
+          <Suspense fallback={null}>
+            <Starfield count={200} />
+          </Suspense>
+        </Scene>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <svg
-              className="h-10 w-10 text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Back Button */}
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate('/dashboard')}
+          className="mb-6 flex items-center gap-2 text-gray-300 hover:text-white transition-colors backdrop-blur-sm bg-white/5 px-4 py-2 rounded-lg border border-white/10"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Dashboard</span>
+        </motion.button>
+
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <motion.div 
+              className="p-3 bg-gradient-to-br from-red-600 to-orange-600 rounded-2xl"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ type: 'spring', stiffness: 400 }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            <h2 className="text-3xl font-bold">Emergency Response</h2>
+              <AlertCircle className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-4xl md:text-5xl font-bold text-blue-50">
+              Emergency Response
+            </h1>
           </div>
-          <p className="text-gray-400">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             Manage emergency contacts, medical information, and safety features
           </p>
-        </div>
+        </motion.div>
 
         {/* Emergency Alert Banner */}
-        <div className="mb-8 bg-red-900 bg-opacity-30 border-2 border-red-600 rounded-lg p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8 backdrop-blur-xl bg-red-600/10 border-2 border-red-500/50 rounded-2xl p-6"
+        >
           <div className="flex items-start gap-4">
-            <svg
-              className="h-8 w-8 text-red-400 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{ 
+                duration: 2,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+              <Shield className="h-8 w-8 text-red-400 flex-shrink-0" />
+            </motion.div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-red-300 mb-2">
                 Emergency SOS Button Available
@@ -110,103 +90,78 @@ const EmergencyPage: React.FC = () => {
                 it to immediately alert your emergency contacts with your location and
                 medical information.
               </p>
-              <div className="flex gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-white/5 px-3 py-2 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
                   <span className="text-red-200">GPS Location Sharing</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-white/5 px-3 py-2 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
                   <span className="text-red-200">Medical Info Included</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="h-5 w-5 text-red-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                <div className="flex items-center gap-2 backdrop-blur-sm bg-white/5 px-3 py-2 rounded-lg">
+                  <CheckCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
                   <span className="text-red-200">Instant Notifications</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Tab Navigation */}
-        <div className="mb-8 border-b border-gray-700">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('medical-info')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'medical-info'
-                  ? 'border-red-500 text-red-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              Medical Information
-            </button>
-            <button
-              onClick={() => setActiveTab('navigation')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'navigation'
-                  ? 'border-red-500 text-red-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              Safe Return Home
-            </button>
-            <button
-              onClick={() => setActiveTab('alerts')}
-              className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'alerts'
-                  ? 'border-red-500 text-red-400'
-                  : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-              }`}
-            >
-              Alert Settings
-            </button>
-          </nav>
-        </div>
+        {/* Tab Navigation with glass morphism */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8 flex justify-center overflow-x-auto px-2"
+        >
+          <div className="inline-flex gap-2 p-2 backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 min-w-min">
+            {[
+              { id: 'medical-info' as TabType, label: 'Medical Information', icon: Shield },
+              { id: 'navigation' as TabType, label: 'Safe Return Home', icon: MapPin },
+              { id: 'alerts' as TabType, label: 'Alert Settings', icon: Bell }
+            ].map((tab) => (
+              <motion.button
+                key={tab.id}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative px-4 sm:px-6 py-3 rounded-xl font-medium transition-all text-sm sm:text-base whitespace-nowrap overflow-hidden flex items-center gap-2 ${
+                  activeTab === tab.id
+                    ? 'text-gray-900'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="activeEmergencyTab"
+                    className="absolute inset-0 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <tab.icon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{tab.label}</span>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
 
-        {/* Tab Content */}
-        <div className="max-w-4xl">
-          {activeTab === 'medical-info' && <MedicalInfoCard />}
-          {activeTab === 'navigation' && <SafeReturnHome />}
-          {activeTab === 'alerts' && <AlertSettings />}
-        </div>
-      </main>
+        {/* Tab Content with AnimatePresence */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="max-w-4xl mx-auto"
+          >
+            {activeTab === 'medical-info' && <MedicalInfoCard />}
+            {activeTab === 'navigation' && <SafeReturnHome />}
+            {activeTab === 'alerts' && <AlertSettings />}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
