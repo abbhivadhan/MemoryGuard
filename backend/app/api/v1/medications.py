@@ -265,39 +265,103 @@ async def get_adherence_stats(
         )
     
     # Calculate adherence for the specified period
-    cutoff_time = datetime.utcnow() - timedelta(days=days)
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
+    cutoff_time = now - timedelta(days=days)
     
-    recent_logs = [
-        log for log in (medication.adherence_log or [])
-        if datetime.fromisoformat(log.get("scheduled_time", "")) >= cutoff_time
-    ]
+    # Get scheduled doses from the medication's schedule within the period
+    scheduled_doses = []
+    scheduled_times_set = set()  # Track unique scheduled times
     
-    total_scheduled = len(recent_logs)
-    total_taken = sum(1 for log in recent_logs if not log.get("skipped", True))
+    if medication.schedule:
+        for scheduled_time in medication.schedule:
+            # Ensure timezone-aware
+            if scheduled_time.tzinfo is None:
+                scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
+            
+            # Only count doses within the period and in the past
+            if cutoff_time <= scheduled_time <= now:
+                scheduled_doses.append(scheduled_time)
+                scheduled_times_set.add(scheduled_time.isoformat())
+    
+    # ALWAYS check adherence log for additional scheduled times
+    # (in case user logged doses that weren't in the original schedule)
+    if medication.adherence_log:
+        for log in medication.adherence_log:
+            try:
+                scheduled_time_str = log.get("scheduled_time", "").replace('Z', '+00:00')
+                scheduled_time = datetime.fromisoformat(scheduled_time_str)
+                if scheduled_time.tzinfo is None:
+                    scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
+                
+                # Only add if within period and not already counted
+                if cutoff_time <= scheduled_time <= now:
+                    time_iso = scheduled_time.isoformat()
+                    if time_iso not in scheduled_times_set:
+                        scheduled_doses.append(scheduled_time)
+                        scheduled_times_set.add(time_iso)
+            except (ValueError, TypeError):
+                continue
+    
+    total_scheduled = len(scheduled_doses)
+    
+    # Count taken and skipped from adherence log
+    recent_logs = []
+    if medication.adherence_log:
+        for log in medication.adherence_log:
+            try:
+                scheduled_time_str = log.get("scheduled_time", "").replace('Z', '+00:00')
+                scheduled_time = datetime.fromisoformat(scheduled_time_str)
+                if scheduled_time.tzinfo is None:
+                    scheduled_time = scheduled_time.replace(tzinfo=timezone.utc)
+                if cutoff_time <= scheduled_time <= now:
+                    recent_logs.append(log)
+            except (ValueError, TypeError):
+                continue
+    
+    total_taken = sum(1 for log in recent_logs if not log.get("skipped", False) and log.get("taken_time"))
     total_skipped = sum(1 for log in recent_logs if log.get("skipped", False))
     
-    adherence_rate = (total_taken / total_scheduled * 100) if total_scheduled > 0 else 0.0
+    # Debug logging
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Adherence Stats Debug for {medication.name}:")
+    logger.info(f"  Total scheduled doses: {len(scheduled_doses)}")
+    logger.info(f"  Recent logs count: {len(recent_logs)}")
+    logger.info(f"  Total taken: {total_taken}")
+    logger.info(f"  Total skipped: {total_skipped}")
+    if recent_logs:
+        logger.info(f"  Sample log: {recent_logs[0]}")
     
-    # Find last taken and next scheduled
+    # Calculate adherence rate
+    adherence_rate = (total_taken / len(scheduled_doses) * 100) if len(scheduled_doses) > 0 else 0.0
+    
+    # Find last taken
     last_taken = None
     if recent_logs:
-        taken_logs = [log for log in recent_logs if not log.get("skipped", True) and log.get("taken_time")]
+        taken_logs = [log for log in recent_logs if not log.get("skipped", False) and log.get("taken_time")]
         if taken_logs:
             last_taken_str = max(taken_logs, key=lambda x: x.get("taken_time", ""))["taken_time"]
-            last_taken = datetime.fromisoformat(last_taken_str)
+            try:
+                last_taken = datetime.fromisoformat(last_taken_str.replace('Z', '+00:00'))
+            except (ValueError, TypeError):
+                pass
     
     # Find next scheduled from schedule
     next_scheduled = None
-    now = datetime.utcnow()
     if medication.schedule:
-        future_schedules = [dt for dt in medication.schedule if dt > now]
+        future_schedules = [
+            dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt 
+            for dt in medication.schedule 
+            if (dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt) > now
+        ]
         if future_schedules:
             next_scheduled = min(future_schedules)
     
     return AdherenceStats(
         medication_id=medication.id,
         medication_name=medication.name,
-        total_scheduled=total_scheduled,
+        total_scheduled=len(scheduled_doses),
         total_taken=total_taken,
         total_skipped=total_skipped,
         adherence_rate=round(adherence_rate, 2),

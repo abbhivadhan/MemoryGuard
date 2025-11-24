@@ -56,11 +56,17 @@ const AdherenceTracker: React.FC = () => {
       setLoading(true);
       const data = await medicationService.getMedications(true);
       
+      console.log('Loaded medications:', data.medications.map(m => ({
+        name: m.name,
+        adherence_log_count: m.adherence_log?.length || 0
+      })));
+      
       // Load adherence stats for each medication
       const medsWithStats = await Promise.all(
         data.medications.map(async (med) => {
           try {
             const stats = await medicationService.getAdherenceStats(med.id, selectedPeriod);
+            console.log(`Stats for ${med.name}:`, stats);
             return { ...med, stats };
           } catch (error) {
             console.error(`Failed to load stats for ${med.name}:`, error);
@@ -134,7 +140,7 @@ const AdherenceTracker: React.FC = () => {
   };
 
   const calculateOverallAdherence = () => {
-    const medsWithStats = medications.filter((m) => m.stats);
+    const medsWithStats = medications.filter((m) => m.stats && m.stats.total_scheduled > 0);
     if (medsWithStats.length === 0) return 0;
 
     const totalRate = medsWithStats.reduce((sum, m) => sum + (m.stats?.adherence_rate || 0), 0);
@@ -207,16 +213,24 @@ const AdherenceTracker: React.FC = () => {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-blue-50">Medication Adherence</h2>
-        <select
-          value={selectedPeriod}
-          onChange={(e) => setSelectedPeriod(Number(e.target.value))}
-          className="px-4 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value={7}>Last 7 Days</option>
-          <option value={14}>Last 14 Days</option>
-          <option value={30}>Last 30 Days</option>
-          <option value={90}>Last 90 Days</option>
-        </select>
+        <div className="flex gap-2">
+          <button
+            onClick={loadMedicationsWithStats}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Refresh
+          </button>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(Number(e.target.value))}
+            className="px-4 py-2 bg-white/5 border border-white/10 text-white placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value={7}>Last 7 Days</option>
+            <option value={14}>Last 14 Days</option>
+            <option value={30}>Last 30 Days</option>
+            <option value={90}>Last 90 Days</option>
+          </select>
+        </div>
       </div>
 
       {/* Overall adherence summary */}
@@ -299,7 +313,7 @@ const AdherenceTracker: React.FC = () => {
                 </div>
 
                 {med.stats && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-white/10">
                     <div>
                       <p className="text-xs text-gray-400 mb-1">Scheduled</p>
                       <p className="text-lg font-semibold text-blue-50">
@@ -328,7 +342,7 @@ const AdherenceTracker: React.FC = () => {
                 )}
 
                 {med.stats && (med.stats.last_taken || med.stats.next_scheduled) && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-400">
+                  <div className="mt-4 pt-4 border-t border-white/10 text-sm text-gray-300">
                     {med.stats.last_taken && (
                       <p>Last taken: {formatDateTime(med.stats.last_taken)}</p>
                     )}
@@ -340,22 +354,22 @@ const AdherenceTracker: React.FC = () => {
 
                 {/* Recent adherence log */}
                 {med.adherence_log && med.adherence_log.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-300 mb-2">Recent Activity</p>
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-sm font-medium text-white mb-2">Recent Activity</p>
                     <div className="space-y-2">
                       {med.adherence_log.slice(-5).reverse().map((log, idx) => (
                         <div
                           key={idx}
-                          className="flex items-center justify-between text-sm py-2 px-3 bg-gray-50 rounded"
+                          className="flex items-center justify-between text-sm py-2 px-3 bg-white/5 border border-white/10 rounded"
                         >
-                          <span className="text-gray-400">
+                          <span className="text-gray-300">
                             {formatDateTime(log.scheduled_time)}
                           </span>
                           <span
                             className={`px-2 py-1 rounded text-xs font-medium ${
                               log.skipped
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-green-100 text-green-700'
+                                ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                : 'bg-green-500/20 text-green-300 border border-green-500/30'
                             }`}
                           >
                             {log.skipped ? 'Skipped' : 'Taken'}
@@ -385,10 +399,10 @@ const AdherenceTracker: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
+              className="backdrop-blur-xl bg-gray-900 border border-white/20 rounded-lg shadow-xl p-6 max-w-md w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-blue-50 mb-4">
+              <h3 className="text-xl font-bold text-white mb-4">
                 Log Medication: {selectedMed.name}
               </h3>
 
@@ -460,7 +474,7 @@ const AdherenceTracker: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowLogModal(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors"
                   >
                     Cancel
                   </button>

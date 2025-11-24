@@ -10,11 +10,12 @@ import CaregiverDashboard from '../components/caregiver/CaregiverDashboard';
 import ActivityMonitor from '../components/caregiver/ActivityMonitor';
 import AlertSystem from '../components/caregiver/AlertSystem';
 import ActivityLogViewer from '../components/caregiver/ActivityLogViewer';
+import MedicationLogEditor from '../components/caregiver/MedicationLogEditor';
 import Scene from '../components/3d/Scene';
 import Starfield from '../components/3d/Starfield';
-import { ArrowLeft, Users, Activity, Bell, FileText } from 'lucide-react';
+import { ArrowLeft, Users, Activity, Bell, FileText, Pill } from 'lucide-react';
 
-type TabType = 'dashboard' | 'activity' | 'alerts' | 'log';
+type TabType = 'dashboard' | 'activity' | 'alerts' | 'log' | 'medications';
 
 const CaregiverPage: React.FC = () => {
   const { patientId } = useParams<{ patientId?: string }>();
@@ -26,6 +27,7 @@ const CaregiverPage: React.FC = () => {
     { id: 'dashboard' as TabType, label: 'Dashboard', icon: Users },
     { id: 'activity' as TabType, label: 'Activity Monitor', icon: Activity, requiresPatient: true },
     { id: 'alerts' as TabType, label: 'Alerts', icon: Bell },
+    { id: 'medications' as TabType, label: 'Medication Logs', icon: Pill },
     { id: 'log' as TabType, label: 'Activity Log', icon: FileText, requiresPatient: true },
   ];
 
@@ -61,6 +63,8 @@ const CaregiverPage: React.FC = () => {
         return patientId ? <ActivityMonitor patientId={patientId} /> : null;
       case 'alerts':
         return <AlertSystem />;
+      case 'medications':
+        return <MedicationLogEditor patientId={patientId} />;
       case 'log':
         return patientId ? (
           <ActivityLogViewer patientId={patientId} patientName={patientName} />

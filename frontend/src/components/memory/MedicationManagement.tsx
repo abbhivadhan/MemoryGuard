@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { medicationService, Medication, MedicationCreate } from '../../services/medicationService';
+import { reminderService, ReminderCreate } from '../../services/memoryService';
 import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 
 interface MedicationFormData {
@@ -56,11 +57,38 @@ const MedicationManagement: React.FC = () => {
     e.preventDefault();
 
     try {
+      // Generate a full 30-day schedule (past 7 days + future 23 days) for adherence tracking
+      const fullSchedule: string[] = [];
+      const now = new Date();
+      
+      // Get unique times from the schedule
+      const uniqueTimes = new Map<string, { hours: number; minutes: number }>();
+      formData.schedule.forEach(time => {
+        const timeKey = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;
+        if (!uniqueTimes.has(timeKey)) {
+          uniqueTimes.set(timeKey, { hours: time.getHours(), minutes: time.getMinutes() });
+        }
+      });
+      
+      // Generate schedule for past 7 days and future 23 days (total 30 days)
+      for (let dayOffset = -7; dayOffset < 23; dayOffset++) {
+        const date = new Date(now);
+        date.setDate(date.getDate() + dayOffset);
+        
+        uniqueTimes.forEach(({ hours, minutes }) => {
+          const scheduledTime = new Date(date);
+          scheduledTime.setHours(hours, minutes, 0, 0);
+          fullSchedule.push(scheduledTime.toISOString());
+        });
+      }
+      
+      console.log(`📅 Generated ${fullSchedule.length} scheduled doses (${uniqueTimes.size} times/day × 30 days)`);
+      
       const medicationData: MedicationCreate = {
         name: formData.name,
         dosage: formData.dosage,
         frequency: formData.frequency,
-        schedule: formData.schedule.map(d => d.toISOString()),
+        schedule: fullSchedule,
         instructions: formData.instructions || undefined,
         prescriber: formData.prescriber || undefined,
         pharmacy: formData.pharmacy || undefined,
@@ -72,6 +100,68 @@ const MedicationManagement: React.FC = () => {
         await medicationService.updateMedication(editingMed.id, medicationData);
       } else {
         await medicationService.createMedication(medicationData);
+        
+        // Auto-create reminders for the medication schedule
+        console.log('📋 Medication created, checking schedule...', {
+          scheduleLength: formData.schedule.length,
+          schedule: formData.schedule
+        });
+        
+        if (formData.schedule.length > 0) {
+          try {
+            const now = new Date();
+            console.log('⏰ Current time:', now.toISOString());
+            
+            // Get unique times (hour:minute) from schedule
+            const uniqueTimes = new Map<string, Date>();
+            formData.schedule.forEach((time, index) => {
+              console.log(`  Schedule[${index}]:`, time, 'Type:', typeof time);
+              const timeKey = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;
+              // Keep the earliest occurrence of each time
+              if (!uniqueTimes.has(timeKey)) {
+                // Ensure the time is in the future
+                const scheduledTime = new Date(time);
+                console.log(`    Original time: ${scheduledTime.toISOString()}`);
+                if (scheduledTime <= now) {
+                  // If time has passed, schedule for tomorrow
+                  scheduledTime.setDate(scheduledTime.getDate() + 1);
+                  console.log(`    Adjusted to tomorrow: ${scheduledTime.toISOString()}`);
+                }
+                uniqueTimes.set(timeKey, scheduledTime);
+              }
+            });
+            
+            console.log(`🔔 Creating ${uniqueTimes.size} reminder(s) for ${formData.name} at times:`, Array.from(uniqueTimes.keys()));
+            
+            const reminderPromises = Array.from(uniqueTimes.values()).map(async (scheduledTime, index) => {
+              const reminderData: ReminderCreate = {
+                title: `Take ${formData.name}`,
+                description: `Dosage: ${formData.dosage}`,
+                reminder_type: 'medication',
+                scheduled_time: scheduledTime.toISOString(),
+                frequency: 'daily',
+                send_notification: true,
+              };
+              console.log(`  Creating reminder ${index + 1}:`, reminderData);
+              const result = await reminderService.createReminder(reminderData);
+              console.log(`  ✓ Reminder ${index + 1} created:`, result);
+              return result;
+            });
+            
+            await Promise.all(reminderPromises);
+            console.log(`✅ Successfully created ${uniqueTimes.size} reminder(s) for ${formData.name}`);
+          } catch (reminderError) {
+            console.error('❌ Failed to create reminders:', reminderError);
+            console.error('Error details:', {
+              message: reminderError instanceof Error ? reminderError.message : String(reminderError),
+              stack: reminderError instanceof Error ? reminderError.stack : undefined
+            });
+            // Don't fail the whole operation if reminder creation fails
+            alert(`Medication created, but failed to create reminders: ${reminderError}`);
+          }
+        } else {
+          console.warn('⚠️ No schedule times added - skipping reminder creation');
+        }
       }
 
       resetForm();
@@ -137,8 +227,14 @@ const MedicationManagement: React.FC = () => {
 
   const addScheduleTime = () => {
     const [hours, minutes] = scheduleTime.split(':').map(Number);
+    const now = new Date();
     const newTime = new Date();
     newTime.setHours(hours, minutes, 0, 0);
+    
+    // If the time has passed today, schedule for tomorrow
+    if (newTime <= now) {
+      newTime.setDate(newTime.getDate() + 1);
+    }
     
     setFormData({
       ...formData,
@@ -303,7 +399,7 @@ const MedicationManagement: React.FC = () => {
                   <button
                     type="button"
                     onClick={addScheduleTime}
-                    className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                   >
                     + Add Time
                   </button>
@@ -312,13 +408,13 @@ const MedicationManagement: React.FC = () => {
                   {formData.schedule.map((time, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full"
+                      className="flex items-center gap-2 px-3 py-1 bg-blue-500 text-white rounded-full"
                     >
                       <span>{formatTime(time)}</span>
                       <button
                         type="button"
                         onClick={() => removeScheduleTime(index)}
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-white hover:text-gray-200 font-bold"
                       >
                         ×
                       </button>
@@ -332,13 +428,13 @@ const MedicationManagement: React.FC = () => {
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg"
               >
                 {editingMed ? 'Update' : 'Add'} Medication
               </button>
@@ -384,8 +480,8 @@ const MedicationManagement: React.FC = () => {
                       <span
                         className={`px-2 py-1 rounded text-xs ${
                           med.active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-400'
+                            ? 'bg-green-500 text-white'
+                            : 'bg-gray-600 text-gray-300'
                         }`}
                       >
                         {med.active ? 'Active' : 'Inactive'}
@@ -398,19 +494,19 @@ const MedicationManagement: React.FC = () => {
                   <div className="flex flex-col gap-1">
                     <button
                       onClick={() => handleEdit(med)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 transition-colors"
+                      className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleToggleActive(med)}
-                      className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 transition-colors"
+                      className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
                     >
                       {med.active ? 'Deactivate' : 'Activate'}
                     </button>
                     <button
                       onClick={() => handleDelete(med.id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                      className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
                     >
                       Delete
                     </button>
@@ -424,7 +520,7 @@ const MedicationManagement: React.FC = () => {
                       {med.schedule.map((time, idx) => (
                         <span
                           key={idx}
-                          className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                          className="px-2 py-1 bg-blue-500 text-white rounded text-xs"
                         >
                           {formatTime(time)}
                         </span>
@@ -445,10 +541,10 @@ const MedicationManagement: React.FC = () => {
                   </p>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-gray-200">
+                <div className="mt-3 pt-3 border-t border-gray-600">
                   <button
                     onClick={() => setSelectedMed(med)}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    className="text-sm text-cyan-400 hover:text-cyan-300 font-medium"
                   >
                     View Details →
                   </button>
@@ -473,14 +569,14 @@ const MedicationManagement: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto border border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-2xl font-bold text-blue-50">{selectedMed.name}</h3>
+                <h3 className="text-2xl font-bold text-white">{selectedMed.name}</h3>
                 <button
                   onClick={() => setSelectedMed(null)}
-                  className="text-gray-500 hover:text-gray-300 text-2xl"
+                  className="text-gray-400 hover:text-white text-2xl"
                 >
                   ×
                 </button>
@@ -489,44 +585,44 @@ const MedicationManagement: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm font-medium text-gray-400">Dosage</p>
-                  <p className="text-blue-50">{selectedMed.dosage}</p>
+                  <p className="text-white">{selectedMed.dosage}</p>
                 </div>
 
                 <div>
                   <p className="text-sm font-medium text-gray-400">Frequency</p>
-                  <p className="text-blue-50">{selectedMed.frequency}</p>
+                  <p className="text-white">{selectedMed.frequency}</p>
                 </div>
 
                 {selectedMed.instructions && (
                   <div>
                     <p className="text-sm font-medium text-gray-400">Instructions</p>
-                    <p className="text-blue-50">{selectedMed.instructions}</p>
+                    <p className="text-white">{selectedMed.instructions}</p>
                   </div>
                 )}
 
                 {selectedMed.prescriber && (
                   <div>
                     <p className="text-sm font-medium text-gray-400">Prescriber</p>
-                    <p className="text-blue-50">{selectedMed.prescriber}</p>
+                    <p className="text-white">{selectedMed.prescriber}</p>
                   </div>
                 )}
 
                 {selectedMed.pharmacy && (
                   <div>
                     <p className="text-sm font-medium text-gray-400">Pharmacy</p>
-                    <p className="text-blue-50">{selectedMed.pharmacy}</p>
+                    <p className="text-white">{selectedMed.pharmacy}</p>
                   </div>
                 )}
 
                 <div>
                   <p className="text-sm font-medium text-gray-400">Start Date</p>
-                  <p className="text-blue-50">{formatDate(selectedMed.start_date)}</p>
+                  <p className="text-white">{formatDate(selectedMed.start_date)}</p>
                 </div>
 
                 {selectedMed.end_date && (
                   <div>
                     <p className="text-sm font-medium text-gray-400">End Date</p>
-                    <p className="text-blue-50">{formatDate(selectedMed.end_date)}</p>
+                    <p className="text-white">{formatDate(selectedMed.end_date)}</p>
                   </div>
                 )}
 
@@ -535,7 +631,7 @@ const MedicationManagement: React.FC = () => {
                     <p className="text-sm font-medium text-gray-400 mb-2">Side Effects</p>
                     <ul className="list-disc list-inside space-y-1">
                       {selectedMed.side_effects.map((effect, idx) => (
-                        <li key={idx} className="text-blue-50 text-sm">
+                        <li key={idx} className="text-white text-sm">
                           {effect}
                         </li>
                       ))}

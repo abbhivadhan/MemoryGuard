@@ -25,6 +25,54 @@ from app.services.assessment_service import AssessmentScoringService
 router = APIRouter(prefix="/assessments", tags=["assessments"])
 
 
+@router.get("", response_model=AssessmentListResponse)
+async def list_assessments(
+    limit: int = 10,
+    offset: int = 0,
+    sort: str = "-created_at",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    List assessments for the current user with pagination.
+    
+    Requirements: 12.4
+    """
+    # Parse sort parameter
+    if sort.startswith("-"):
+        sort_field = sort[1:]
+        sort_order = desc
+    else:
+        sort_field = sort
+        sort_order = lambda x: x
+    
+    # Map sort field to model attribute
+    sort_mapping = {
+        "created_at": Assessment.created_at,
+        "completed_at": Assessment.completed_at,
+        "started_at": Assessment.started_at,
+        "score": Assessment.score
+    }
+    
+    sort_column = sort_mapping.get(sort_field, Assessment.created_at)
+    
+    # Query assessments
+    query = db.query(Assessment).filter(
+        Assessment.user_id == current_user.id
+    )
+    
+    total = query.count()
+    
+    assessments = query.order_by(
+        sort_order(sort_column)
+    ).limit(limit).offset(offset).all()
+    
+    return {
+        "assessments": [assessment.to_dict() for assessment in assessments],
+        "total": total
+    }
+
+
 @router.post("/start", response_model=AssessmentResponse, status_code=status.HTTP_201_CREATED)
 async def start_assessment(
     request: AssessmentStartRequest,
@@ -39,11 +87,28 @@ async def start_assessment(
     # Get max score for assessment type
     max_score = AssessmentScoringService.get_max_score(request.type.value)
     
+    # Map schema enum to model enum (handle case differences)
+    type_mapping = {
+        "MMSE": AssessmentType.MMSE,
+        "MOCA": AssessmentType.MOCA,
+        "MoCA": AssessmentType.MOCA,
+        "CDR": AssessmentType.CDR,
+        "ClockDrawing": AssessmentType.CLOCK_DRAWING,
+        "CLOCK_DRAWING": AssessmentType.CLOCK_DRAWING
+    }
+    
+    assessment_type = type_mapping.get(request.type.value)
+    if not assessment_type:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid assessment type: {request.type.value}"
+        )
+    
     # Create new assessment
     assessment = Assessment(
         id=uuid.uuid4(),
         user_id=current_user.id,
-        type=AssessmentType[request.type.value],
+        type=assessment_type,
         status=AssessmentStatus.IN_PROGRESS,
         max_score=max_score,
         responses={},

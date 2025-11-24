@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { motion } from 'framer-motion';
 import MMSETest from '../components/cognitive/MMSETest';
 import MoCATest from '../components/cognitive/MoCATest';
 import AssessmentHistory from '../components/cognitive/AssessmentHistory';
@@ -125,8 +127,8 @@ const AssessmentPage: React.FC = () => {
 
       <div className="relative z-10">
         {/* Navigation */}
-        {view !== 'history' && (
-          <div className="fixed top-2 sm:top-4 left-2 sm:left-4 z-50">
+        <div className="fixed top-2 sm:top-4 left-2 sm:left-4 z-50">
+          {view !== 'history' ? (
             <button
               onClick={() => {
                 if (window.confirm('Are you sure you want to exit? Your progress will be saved.')) {
@@ -139,8 +141,19 @@ const AssessmentPage: React.FC = () => {
               <span className="hidden sm:inline">← Back to History</span>
               <span className="sm:hidden">← Back</span>
             </button>
-          </div>
-        )}
+          ) : (
+            <motion.button
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-2 backdrop-blur-sm bg-white/5 hover:bg-white/10 text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base touch-target border border-white/10"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Dashboard</span>
+            </motion.button>
+          )}
+        </div>
 
         {/* Content */}
         {view === 'history' && (

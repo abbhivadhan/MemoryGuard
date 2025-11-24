@@ -39,11 +39,11 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
   };
 
   return (
-    <form onSubmit={handleSubmit} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Post</h2>
+    <form onSubmit={handleSubmit} className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-6">
+      <h2 className="text-2xl font-bold text-white mb-6">Create New Post</h2>
 
       {error && (
-        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300">
           {error}
         </div>
       )}
@@ -57,7 +57,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             placeholder="Enter post title..."
             maxLength={255}
           />
@@ -70,13 +70,13 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
           <select
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           >
-            <option value="general">General Discussion</option>
-            <option value="support">Support & Encouragement</option>
-            <option value="tips">Tips & Advice</option>
-            <option value="questions">Questions</option>
-            <option value="resources">Resources</option>
+            <option value="general" className="bg-gray-900">General Discussion</option>
+            <option value="support" className="bg-gray-900">Support & Encouragement</option>
+            <option value="tips" className="bg-gray-900">Tips & Advice</option>
+            <option value="questions" className="bg-gray-900">Questions</option>
+            <option value="resources" className="bg-gray-900">Resources</option>
           </select>
         </div>
 
@@ -87,7 +87,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
           <textarea
             value={formData.content}
             onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
             rows={8}
             placeholder="Share your thoughts..."
           />
@@ -105,7 +105,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg shadow-blue-500/20"
         >
           {loading ? 'Creating...' : 'Create Post'}
         </button>
@@ -113,7 +113,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-white/5 transition-colors disabled:opacity-50"
+          className="px-6 py-3 border border-white/20 text-gray-300 rounded-lg hover:bg-white/5 hover:border-white/30 transition-all disabled:opacity-50 font-medium"
         >
           Cancel
         </button>

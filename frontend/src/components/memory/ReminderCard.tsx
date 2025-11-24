@@ -109,7 +109,7 @@ const ReminderCard: React.FC<ReminderCardProps> = ({ reminder, onUpdate }) => {
           )}
 
           <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>⏰ {formatTime(reminder.scheduled_time)}</span>
+            <span>{formatTime(reminder.scheduled_time)}</span>
             {reminder.is_completed && reminder.completed_at && (
               <span className="text-green-600">
                 ✓ Completed {formatTime(reminder.completed_at)}

@@ -5,8 +5,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { motion } from 'framer-motion';
 import { LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 import MedicalDisclaimer from '../ui/MedicalDisclaimer';
@@ -156,27 +155,49 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-b from-gray-900 to-black text-white p-8">
-      <div className="container mx-auto">
+    <div className="w-full min-h-screen text-white px-4 sm:px-8 py-8 pt-20 sm:pt-24">
+      <div className="container mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Assessment History</h1>
-          <p className="text-gray-400">Track your cognitive assessment scores over time</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Assessment History
+          </h1>
+          <p className="text-gray-400 text-lg">Track your cognitive assessment scores over time</p>
+        </motion.div>
 
         {/* Medical Disclaimer */}
-        <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
           <MedicalDisclaimer type="assessment" compact />
-        </div>
+        </motion.div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {assessmentTypes.map(type => {
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          {assessmentTypes.map((type, index) => {
             const stats = getStatistics(type);
             if (!stats) return null;
 
             return (
-              <div key={type} className={`rounded-lg p-6 border-2 ${getScoreBgColor(stats.latest!, stats.maxScore)}`}>
+              <motion.div
+                key={type}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 + index * 0.1 }}
+                className={`backdrop-blur-md bg-white/5 rounded-xl p-6 border-2 ${getScoreBgColor(stats.latest!, stats.maxScore)} hover:bg-white/10 transition-all duration-300`}
+              >
                 <h3 className="text-xl font-bold mb-2">{type}</h3>
                 <div className="space-y-2">
                   <div>
@@ -194,20 +215,25 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
                 {onStartNewAssessment && (
                   <button
                     onClick={() => onStartNewAssessment(type)}
-                    className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-all duration-200"
+                    className="mt-4 w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-2 rounded-lg transition-all duration-200 transform hover:scale-105"
                   >
                     Take {type} Test
                   </button>
                 )}
-              </div>
+              </motion.div>
             );
           })}
-        </div>
+        </motion.div>
 
         {/* Trend Chart */}
         {chartData.length > 0 && (
-          <div className="bg-gray-800 rounded-lg p-6 mb-8">
-            <h2 className="text-2xl font-bold mb-4">Score Trends</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="backdrop-blur-md bg-white/5 rounded-xl p-6 mb-8 border border-white/10"
+          >
+            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Score Trends</h2>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -234,28 +260,38 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
                 })}
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </motion.div>
         )}
 
         {/* Filter */}
-        <div className="mb-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mb-6"
+        >
           <label className="text-gray-400 mr-4">Filter by type:</label>
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="backdrop-blur-md bg-white/5 text-white px-4 py-2 rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-white/10 transition-all"
           >
             <option value="all">All Types</option>
             {assessmentTypes.map(type => (
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
-        </div>
+        </motion.div>
 
         {/* Assessment List */}
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="backdrop-blur-md bg-white/5 rounded-xl overflow-hidden border border-white/10"
+        >
           <table className="w-full">
-            <thead className="bg-gray-900">
+            <thead className="backdrop-blur-md bg-white/5 border-b border-white/10">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Score</th>
@@ -282,7 +318,7 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
                 </tr>
               ) : (
                 filteredAssessments.map((assessment) => (
-                  <tr key={assessment.id} className="hover:bg-gray-700 transition-colors">
+                  <tr key={assessment.id} className="hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="font-medium">{assessment.type}</span>
                     </td>
@@ -317,38 +353,30 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
               )}
             </tbody>
           </table>
-        </div>
+        </motion.div>
 
         {/* New Assessment Buttons */}
         {onStartNewAssessment && (
-          <div className="mt-8 flex gap-4 justify-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
+          >
             <button
               onClick={() => onStartNewAssessment('MMSE')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-all duration-200 transform hover:scale-105"
+              className="backdrop-blur-md bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 border border-white/20"
             >
               Start MMSE Test
             </button>
             <button
               onClick={() => onStartNewAssessment('MoCA')}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg transition-all duration-200 transform hover:scale-105"
+              className="backdrop-blur-md bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-lg transition-all duration-200 transform hover:scale-105 border border-white/20"
             >
               Start MoCA Test
             </button>
-          </div>
+          </motion.div>
         )}
-      </div>
-
-      {/* 3D Background */}
-      <div className="fixed inset-0 -z-10 opacity-10">
-        <Canvas camera={{ position: [0, 0, 5] }}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[10, 10, 10]} />
-          <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={0.3} />
-          <mesh>
-            <icosahedronGeometry args={[2, 1]} />
-            <meshStandardMaterial color="#6366F1" wireframe />
-          </mesh>
-        </Canvas>
       </div>
     </div>
   );

@@ -32,10 +32,12 @@ const ExercisePlayer: React.FC<ExercisePlayerProps> = ({
   };
 
   const handleExerciseComplete = async (score: number, timeTaken: number) => {
+    console.log('Exercise completed!', { score, timeTaken, exercise: exercise.name });
+    
     try {
       setLoading(true);
       
-      await exerciseService.recordPerformance({
+      const performanceData = {
         exercise_id: exercise.id,
         difficulty: exercise.difficulty,
         score,
@@ -46,7 +48,13 @@ const ExercisePlayer: React.FC<ExercisePlayerProps> = ({
           exercise_type: exercise.type,
           exercise_name: exercise.name
         }
-      });
+      };
+      
+      console.log('Recording performance:', performanceData);
+      
+      const result = await exerciseService.recordPerformance(performanceData);
+      
+      console.log('Performance recorded successfully:', result);
 
       // Show completion message briefly before calling onComplete
       setTimeout(() => {
@@ -54,6 +62,7 @@ const ExercisePlayer: React.FC<ExercisePlayerProps> = ({
       }, 2000);
     } catch (error) {
       console.error('Failed to record performance:', error);
+      alert('Failed to save your progress. Please try again.');
       onComplete();
     } finally {
       setLoading(false);

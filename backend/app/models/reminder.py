@@ -38,11 +38,11 @@ class Reminder(BaseModel):
     # Reminder details
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    reminder_type = Column(SQLEnum(ReminderType), nullable=False, default=ReminderType.CUSTOM)
+    reminder_type = Column(SQLEnum(ReminderType, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ReminderType.CUSTOM)
     
     # Scheduling
     scheduled_time = Column(DateTime(timezone=True), nullable=False)
-    frequency = Column(SQLEnum(ReminderFrequency), nullable=False, default=ReminderFrequency.ONCE)
+    frequency = Column(SQLEnum(ReminderFrequency, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ReminderFrequency.ONCE)
     
     # Status
     is_active = Column(Boolean, default=True, nullable=False)

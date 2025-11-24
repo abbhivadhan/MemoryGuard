@@ -15,6 +15,7 @@ export interface AuthResponse {
   refresh_token: string;
   token_type: string;
   user: User;
+  is_new_user?: boolean;
 }
 
 export interface RefreshResponse {
@@ -39,10 +40,10 @@ class AuthService {
   }
 
   /**
-   * Login with email and password (dev mode)
+   * Login with email and password
    */
   async login(email: string, password: string): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/dev-login', {
+    const response = await apiClient.post<AuthResponse>('/auth/login', {
       email,
       password,
     });

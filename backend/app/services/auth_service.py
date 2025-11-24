@@ -69,7 +69,7 @@ class AuthService:
             )
     
     @staticmethod
-    def get_or_create_user(db: Session, user_info: Dict[str, Any]) -> User:
+    def get_or_create_user(db: Session, user_info: Dict[str, Any]) -> tuple[User, bool]:
         """
         Get existing user or create new user from Google OAuth information.
         
@@ -78,7 +78,7 @@ class AuthService:
             user_info: User information from Google OAuth
             
         Returns:
-            User model instance
+            Tuple of (User model instance, is_new_user boolean)
         """
         # Check if user exists
         user = db.query(User).filter(User.email == user_info['email']).first()
@@ -91,6 +91,7 @@ class AuthService:
             db.commit()
             db.refresh(user)
             logger.info(f"Existing user logged in: {user.email}")
+            return user, False
         else:
             # Create new user
             user = User(
@@ -103,8 +104,7 @@ class AuthService:
             db.commit()
             db.refresh(user)
             logger.info(f"New user created: {user.email}")
-        
-        return user
+            return user, True
     
     @staticmethod
     def create_tokens_for_user(user: User) -> Dict[str, str]:
@@ -145,3 +145,93 @@ class AuthService:
             User model instance or None
         """
         return db.query(User).filter(User.id == user_id).first()
+
+    @staticmethod
+    def get_user_by_email(db: Session, email: str) -> Optional[User]:
+        """
+        Get user by email.
+        
+        Args:
+            db: Database session
+            email: User email address
+            
+        Returns:
+            User model instance or None
+        """
+        return db.query(User).filter(User.email == email).first()
+    
+    @staticmethod
+    def create_user_with_password(
+        db: Session,
+        email: str,
+        password: str,
+        name: str
+    ) -> User:
+        """
+        Create a new user with email and password.
+        
+        Args:
+            db: Database session
+            email: User email address
+            password: Plain text password (will be hashed)
+            name: User's name
+            
+        Returns:
+            User model instance
+        """
+        from app.core.security import get_password_hash
+        
+        # Hash the password
+        hashed_password = get_password_hash(password)
+        
+        # Create new user
+        user = User(
+            email=email,
+            name=name,
+            hashed_password=hashed_password
+        )
+        
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+        logger.info(f"New user created with password: {user.email}")
+        return user
+    
+    @staticmethod
+    def authenticate_user(
+        db: Session,
+        email: str,
+        password: str
+    ) -> Optional[User]:
+        """
+        Authenticate user with email and password.
+        
+        Args:
+            db: Database session
+            email: User email address
+            password: Plain text password
+            
+        Returns:
+            User model instance if authentication successful, None otherwise
+        """
+        from app.core.security import verify_password
+        
+        # Get user by email
+        user = AuthService.get_user_by_email(db, email)
+        
+        if not user:
+            return None
+        
+        # Check if user has a password (might be Google-only user)
+        if not user.hashed_password:
+            logger.warning(f"User {email} attempted password login but has no password set")
+            return None
+        
+        # Verify password
+        if not verify_password(password, user.hashed_password):
+            logger.warning(f"Failed password attempt for user: {email}")
+            return None
+        
+        logger.info(f"User authenticated successfully: {email}")
+        return user

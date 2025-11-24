@@ -25,8 +25,8 @@ class Exercise(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     description = Column(String)
-    type = Column(SQLEnum(ExerciseType), nullable=False)
-    difficulty = Column(SQLEnum(DifficultyLevel), nullable=False)
+    type = Column(SQLEnum(ExerciseType, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    difficulty = Column(SQLEnum(DifficultyLevel, values_callable=lambda x: [e.value for e in x]), nullable=False)
     instructions = Column(String)
     config = Column(JSON)  # Exercise-specific configuration
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -41,7 +41,7 @@ class ExercisePerformance(Base):
     id = Column(String, primary_key=True, index=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     exercise_id = Column(String, ForeignKey("exercises.id"), nullable=False)
-    difficulty = Column(SQLEnum(DifficultyLevel), nullable=False)
+    difficulty = Column(SQLEnum(DifficultyLevel, values_callable=lambda x: [e.value for e in x]), nullable=False)
     score = Column(Float, nullable=False)
     max_score = Column(Float, nullable=False)
     time_taken = Column(Integer)  # seconds

@@ -242,12 +242,43 @@ const CaregiverDashboard: React.FC = () => {
       <div className="min-h-screen bg-gray-900 p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold text-white mb-8">Caregiver Dashboard</h1>
-          <div className="bg-gray-800 rounded-lg p-12 text-center">
-            <div className="text-gray-400 text-lg mb-4">
+          <div className="bg-gray-800 rounded-lg p-12 text-center border border-gray-700">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-purple-500/20 rounded-full">
+                <svg className="w-16 h-16 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-white text-2xl font-semibold mb-4">
+              No Patients Yet
+            </div>
+            <div className="text-gray-400 text-lg mb-6 max-w-2xl mx-auto">
               You are not currently monitoring any patients.
             </div>
-            <div className="text-gray-500 text-sm">
-              Patients can grant you caregiver access from their account settings.
+            <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-6 max-w-2xl mx-auto text-left">
+              <div className="text-blue-300 font-semibold mb-3">How to get started:</div>
+              <ol className="text-gray-300 space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">1.</span>
+                  <span>Ask your patient to log into their account</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">2.</span>
+                  <span>They should go to <strong>Memory Assistant → Caregiver Configuration</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">3.</span>
+                  <span>They can invite you by entering your email address</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-400 font-bold">4.</span>
+                  <span>Once they send the invitation, you'll appear in this dashboard</span>
+                </li>
+              </ol>
+            </div>
+            <div className="mt-6 text-gray-500 text-sm">
+              This ensures patient privacy and HIPAA compliance.
             </div>
           </div>
         </div>

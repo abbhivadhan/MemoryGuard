@@ -111,6 +111,11 @@ const communityService = {
     await api.post(`/community/posts/${postId}/flag`, data);
   },
 
+  // Delete post
+  async deletePost(postId: string): Promise<void> {
+    await api.delete(`/community/posts/${postId}`);
+  },
+
   // Flag reply
   async flagReply(replyId: string, data: FlagContentData): Promise<void> {
     await api.post(`/community/replies/${replyId}/flag`, data);
@@ -142,6 +147,12 @@ const communityService = {
   // Get matched users
   async getMatchedUsers(): Promise<UserMatch[]> {
     const response = await api.get('/community/match-users');
+    return response.data;
+  },
+
+  // Get social media feed
+  async getSocialFeed(limit = 20): Promise<any> {
+    const response = await api.get(`/community/social-feed?limit=${limit}`);
     return response.data;
   },
 };

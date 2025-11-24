@@ -98,7 +98,13 @@ class InputValidator:
         """
         stripped_value = value.strip()
 
-        if len(stripped_value) > self.max_string_length:
+        # Skip length validation for base64 data URLs (images, etc.)
+        is_data_url = stripped_value.startswith('data:')
+        
+        # Also skip validation for specific fields that may contain large data
+        skip_length_check = is_data_url or location.endswith('.photo_url') or location.endswith('.image_url')
+
+        if not skip_length_check and len(stripped_value) > self.max_string_length:
             logger.warning("Input rejected: %s exceeds %s characters", location, self.max_string_length)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

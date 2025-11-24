@@ -23,8 +23,8 @@ export default function UserMatching() {
   };
 
   const getMatchScoreColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-600';
-    if (score >= 0.5) return 'text-yellow-600';
+    if (score >= 0.7) return 'text-green-400';
+    if (score >= 0.5) return 'text-yellow-400';
     return 'text-gray-400';
   };
 
@@ -47,7 +47,7 @@ export default function UserMatching() {
   if (error) {
     return (
       <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-300">
           {error}
         </div>
       </div>
@@ -57,10 +57,10 @@ export default function UserMatching() {
   return (
     <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
       <div className="flex items-center gap-2 mb-6">
-        <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
-        <h2 className="text-2xl font-bold text-gray-900">Matched Users</h2>
+        <h2 className="text-2xl font-bold text-white">Matched Users</h2>
       </div>
 
       <p className="text-gray-400 mb-6">
@@ -68,12 +68,12 @@ export default function UserMatching() {
       </p>
 
       {matches.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-8 text-gray-400">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
-          <p className="text-lg mb-2">No matches found yet</p>
-          <p className="text-sm">
+          <p className="text-lg mb-2 text-white">No matches found yet</p>
+          <p className="text-sm text-gray-400">
             Complete your risk assessment and cognitive tests to find users with similar profiles.
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function UserMatching() {
           {matches.map((match) => (
             <div
               key={match.user_id}
-              className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+              className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4 hover:border-blue-500/50 hover:bg-white/10 transition-all"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -92,15 +92,15 @@ export default function UserMatching() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">Community Member</p>
-                    <p className="text-sm text-gray-500">User ID: {match.user_id.slice(0, 8)}...</p>
+                    <p className="font-medium text-white">Community Member</p>
+                    <p className="text-sm text-gray-400">User ID: {match.user_id.slice(0, 8)}...</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className={`text-lg font-bold ${getMatchScoreColor(match.match_score)}`}>
                     {Math.round(match.match_score * 100)}%
                   </p>
-                  <p className="text-xs text-gray-500">{getMatchScoreLabel(match.match_score)}</p>
+                  <p className="text-xs text-gray-400">{getMatchScoreLabel(match.match_score)}</p>
                 </div>
               </div>
 
@@ -110,7 +110,7 @@ export default function UserMatching() {
                   {match.match_reasons.map((reason, idx) => (
                     <span
                       key={idx}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                      className="px-3 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full border border-blue-500/30"
                     >
                       {reason}
                     </span>
@@ -119,7 +119,7 @@ export default function UserMatching() {
               </div>
 
               {(match.risk_profile_similarity !== undefined || match.disease_stage_match !== undefined) && (
-                <div className="mt-3 pt-3 border-t border-gray-200 flex gap-4 text-sm">
+                <div className="mt-3 pt-3 border-t border-white/10 flex gap-4 text-sm">
                   {match.risk_profile_similarity !== undefined && (
                     <div className="flex items-center gap-1 text-gray-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -129,7 +129,7 @@ export default function UserMatching() {
                     </div>
                   )}
                   {match.disease_stage_match && (
-                    <div className="flex items-center gap-1 text-green-600">
+                    <div className="flex items-center gap-1 text-green-400">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
@@ -143,14 +143,14 @@ export default function UserMatching() {
         </div>
       )}
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
         <div className="flex gap-2">
-          <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <div className="text-sm text-blue-800">
+          <div className="text-sm text-blue-200">
             <p className="font-medium mb-1">Privacy Note</p>
-            <p>
+            <p className="text-blue-300">
               User identities are protected. Matches are based on anonymized health data and risk profiles.
               You can connect through the forum while maintaining your privacy.
             </p>

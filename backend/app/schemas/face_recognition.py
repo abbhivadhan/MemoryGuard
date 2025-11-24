@@ -13,7 +13,7 @@ class FaceProfileCreate(BaseModel):
     relationship: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
     face_embedding: list[float] = Field(..., min_length=128, max_length=512)
-    photo_url: Optional[str] = Field(None, max_length=500)
+    photo_url: Optional[str] = None  # No max_length for base64 images
 
 
 class FaceProfileUpdate(BaseModel):
@@ -21,7 +21,7 @@ class FaceProfileUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     relationship: Optional[str] = Field(None, max_length=100)
     notes: Optional[str] = None
-    photo_url: Optional[str] = Field(None, max_length=500)
+    photo_url: Optional[str] = None  # No max_length for base64 images
 
 
 class FaceProfileResponse(BaseModel):

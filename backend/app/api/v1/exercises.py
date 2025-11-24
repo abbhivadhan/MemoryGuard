@@ -83,10 +83,14 @@ async def record_performance(
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
     
+    # Convert performance data to dict and handle type conversions
+    perf_data = performance.dict()
+    perf_data['completed'] = 1 if perf_data.get('completed', True) else 0
+    
     db_performance = ExercisePerformance(
         id=str(uuid.uuid4()),
         user_id=str(current_user.id),
-        **performance.dict()
+        **perf_data
     )
     db.add(db_performance)
     db.commit()
@@ -204,7 +208,8 @@ async def get_user_progress(
     for perf in performances:
         exercise = db.query(Exercise).filter(Exercise.id == perf.exercise_id).first()
         if exercise:
-            type_str = exercise.type.value
+            # Handle both enum and string types
+            type_str = exercise.type.value if hasattr(exercise.type, 'value') else str(exercise.type)
             exercises_by_type[type_str] = exercises_by_type.get(type_str, 0) + 1
             if type_str not in scores_by_type:
                 scores_by_type[type_str] = []
@@ -215,10 +220,26 @@ async def get_user_progress(
         for type_str, scores in scores_by_type.items()
     }
     
-    # Get recent performances
+    # Get recent performances and convert to response format
     recent = db.query(ExercisePerformance).filter(
         ExercisePerformance.user_id == str(current_user.id)
     ).order_by(desc(ExercisePerformance.created_at)).limit(10).all()
+    
+    # Convert performances to response format with proper type conversions
+    recent_responses = []
+    for perf in recent:
+        recent_responses.append(ExercisePerformanceResponse(
+            id=str(perf.id),
+            user_id=str(perf.user_id),
+            exercise_id=str(perf.exercise_id),
+            difficulty=str(perf.difficulty),
+            score=float(perf.score),
+            max_score=float(perf.max_score),
+            time_taken=perf.time_taken,
+            completed=int(perf.completed),
+            performance_data=perf.performance_data,
+            created_at=perf.created_at
+        ))
     
     # Get stats for each unique exercise
     unique_exercise_ids = list(set(p.exercise_id for p in performances))
@@ -235,7 +256,7 @@ async def get_user_progress(
         total_time_spent=total_time,
         exercises_by_type=exercises_by_type,
         average_scores_by_type=average_scores_by_type,
-        recent_performances=recent,
+        recent_performances=recent_responses,
         exercise_stats=exercise_stats
     )
 

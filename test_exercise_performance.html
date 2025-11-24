@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Exercise Performance</title>
+</head>
+<body>
+    <h1>Test Exercise Performance Recording</h1>
+    <button onclick="testRecordPerformance()">Test Record Performance</button>
+    <div id="result"></div>
+
+    <script>
+        async function testRecordPerformance() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+
+            try {
+                // Get auth token from localStorage
+                const authData = localStorage.getItem('auth-storage');
+                if (!authData) {
+                    resultDiv.innerHTML = 'Error: Not logged in';
+                    return;
+                }
+
+                const { state } = JSON.parse(authData);
+                const token = state.token;
+
+                if (!token) {
+                    resultDiv.innerHTML = 'Error: No token found';
+                    return;
+                }
+
+                // Get first exercise
+                const exercisesResponse = await fetch('http://localhost:8000/api/v1/exercises/library', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!exercisesResponse.ok) {
+                    resultDiv.innerHTML = `Error fetching exercises: ${exercisesResponse.status}`;
+                    return;
+                }
+
+                const exercises = await exercisesResponse.json();
+                if (exercises.length === 0) {
+                    resultDiv.innerHTML = 'No exercises found';
+                    return;
+                }
+
+                const exercise = exercises[0];
+                resultDiv.innerHTML = `Found exercise: ${exercise.name}<br>`;
+
+                // Record performance
+                const performanceData = {
+                    exercise_id: exercise.id,
+                    difficulty: exercise.difficulty,
+                    score: 85,
+                    max_score: 100,
+                    time_taken: 120,
+                    completed: true,
+                    performance_data: {
+                        test: true
+                    }
+                };
+
+                resultDiv.innerHTML += `Recording performance...<br>`;
+
+                const response = await fetch('http://localhost:8000/api/v1/exercises/performances', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(performanceData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.text();
+                    resultDiv.innerHTML += `Error: ${response.status} - ${error}`;
+                    return;
+                }
+
+                const result = await response.json();
+                resultDiv.innerHTML += `Success! Performance ID: ${result.id}<br>`;
+                resultDiv.innerHTML += `Score: ${result.score}/${result.max_score}<br>`;
+                resultDiv.innerHTML += JSON.stringify(result, null, 2);
+
+            } catch (error) {
+                resultDiv.innerHTML = `Error: ${error.message}`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

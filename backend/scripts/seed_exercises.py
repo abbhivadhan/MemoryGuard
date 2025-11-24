@@ -6,7 +6,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.core.database import SessionLocal
-from app.models.exercise import Exercise, ExerciseType, DifficultyLevel
+from app.models.exercise import Exercise
 import uuid
 
 
@@ -19,8 +19,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Card Memory Match",
             "description": "Match pairs of cards by remembering their positions",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "memory_game",
+            "difficulty": "easy",
             "instructions": "Click cards to reveal them. Find matching pairs. Complete all pairs to finish.",
             "config": {
                 "pairs": 6,
@@ -32,8 +32,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Card Memory Match - Medium",
             "description": "Match pairs of cards with more cards and less time",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.MEDIUM,
+            "type": "memory_game",
+            "difficulty": "medium",
             "instructions": "Click cards to reveal them. Find matching pairs. Complete all pairs to finish.",
             "config": {
                 "pairs": 10,
@@ -45,8 +45,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Card Memory Match - Hard",
             "description": "Match pairs of cards with many cards and limited time",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.HARD,
+            "type": "memory_game",
+            "difficulty": "hard",
             "instructions": "Click cards to reveal them. Find matching pairs. Complete all pairs to finish.",
             "config": {
                 "pairs": 15,
@@ -58,8 +58,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Number Sequence",
             "description": "Remember and repeat a sequence of numbers",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "memory_game",
+            "difficulty": "easy",
             "instructions": "Watch the sequence of numbers, then repeat it in order.",
             "config": {
                 "sequence_length": 4,
@@ -71,8 +71,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Number Sequence - Medium",
             "description": "Remember longer sequences of numbers",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.MEDIUM,
+            "type": "memory_game",
+            "difficulty": "medium",
             "instructions": "Watch the sequence of numbers, then repeat it in order.",
             "config": {
                 "sequence_length": 6,
@@ -84,8 +84,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Number Sequence - Hard",
             "description": "Remember complex sequences of numbers",
-            "type": ExerciseType.MEMORY_GAME,
-            "difficulty": DifficultyLevel.HARD,
+            "type": "memory_game",
+            "difficulty": "hard",
             "instructions": "Watch the sequence of numbers, then repeat it in order.",
             "config": {
                 "sequence_length": 8,
@@ -99,8 +99,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Shape Patterns",
             "description": "Identify the next shape in a pattern sequence",
-            "type": ExerciseType.PATTERN_RECOGNITION,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "pattern_recognition",
+            "difficulty": "easy",
             "instructions": "Look at the pattern and select the shape that comes next.",
             "config": {
                 "pattern_length": 4,
@@ -112,8 +112,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Shape Patterns - Medium",
             "description": "Identify patterns with more complex sequences",
-            "type": ExerciseType.PATTERN_RECOGNITION,
-            "difficulty": DifficultyLevel.MEDIUM,
+            "type": "pattern_recognition",
+            "difficulty": "medium",
             "instructions": "Look at the pattern and select the shape that comes next.",
             "config": {
                 "pattern_length": 5,
@@ -125,8 +125,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Color Sequence",
             "description": "Identify the next color in a sequence",
-            "type": ExerciseType.PATTERN_RECOGNITION,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "pattern_recognition",
+            "difficulty": "easy",
             "instructions": "Observe the color pattern and select the next color.",
             "config": {
                 "sequence_length": 4,
@@ -137,8 +137,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "3D Object Rotation",
             "description": "Identify which 3D object matches the rotated version",
-            "type": ExerciseType.PATTERN_RECOGNITION,
-            "difficulty": DifficultyLevel.HARD,
+            "type": "pattern_recognition",
+            "difficulty": "hard",
             "instructions": "Select the object that matches the target when rotated.",
             "config": {
                 "objects": ["cube", "pyramid", "cylinder", "sphere"],
@@ -151,8 +151,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Tower of Hanoi",
             "description": "Move disks from one peg to another following the rules",
-            "type": ExerciseType.PROBLEM_SOLVING,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "problem_solving",
+            "difficulty": "easy",
             "instructions": "Move all disks to the rightmost peg. Only one disk can be moved at a time, and larger disks cannot be placed on smaller ones.",
             "config": {
                 "disks": 3,
@@ -163,8 +163,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Tower of Hanoi - Medium",
             "description": "Solve the Tower of Hanoi with more disks",
-            "type": ExerciseType.PROBLEM_SOLVING,
-            "difficulty": DifficultyLevel.MEDIUM,
+            "type": "problem_solving",
+            "difficulty": "medium",
             "instructions": "Move all disks to the rightmost peg. Only one disk can be moved at a time, and larger disks cannot be placed on smaller ones.",
             "config": {
                 "disks": 4,
@@ -175,8 +175,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Path Finding",
             "description": "Find the shortest path through a maze",
-            "type": ExerciseType.PROBLEM_SOLVING,
-            "difficulty": DifficultyLevel.EASY,
+            "type": "problem_solving",
+            "difficulty": "easy",
             "instructions": "Navigate from start to finish using the shortest path possible.",
             "config": {
                 "grid_size": 5,
@@ -187,8 +187,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Path Finding - Medium",
             "description": "Find the shortest path through a larger maze",
-            "type": ExerciseType.PROBLEM_SOLVING,
-            "difficulty": DifficultyLevel.MEDIUM,
+            "type": "problem_solving",
+            "difficulty": "medium",
             "instructions": "Navigate from start to finish using the shortest path possible.",
             "config": {
                 "grid_size": 8,
@@ -199,8 +199,8 @@ def seed_exercises():
             "id": str(uuid.uuid4()),
             "name": "Logic Puzzle",
             "description": "Solve a logic puzzle by deduction",
-            "type": ExerciseType.PROBLEM_SOLVING,
-            "difficulty": DifficultyLevel.HARD,
+            "type": "problem_solving",
+            "difficulty": "hard",
             "instructions": "Use the clues to determine the correct arrangement.",
             "config": {
                 "items": 4,
@@ -210,20 +210,24 @@ def seed_exercises():
     ]
     
     try:
+        added_count = 0
         for exercise_data in exercises:
             # Check if exercise already exists
             existing = db.query(Exercise).filter(Exercise.name == exercise_data["name"]).first()
             if not existing:
                 exercise = Exercise(**exercise_data)
                 db.add(exercise)
+                db.commit()  # Commit each one individually
                 print(f"Added exercise: {exercise_data['name']}")
+                added_count += 1
             else:
                 print(f"Exercise already exists: {exercise_data['name']}")
         
-        db.commit()
-        print(f"\nSuccessfully seeded {len(exercises)} exercises!")
+        print(f"\nSuccessfully seeded {added_count} new exercises!")
     except Exception as e:
         print(f"Error seeding exercises: {e}")
+        import traceback
+        traceback.print_exc()
         db.rollback()
     finally:
         db.close()

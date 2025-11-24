@@ -29,6 +29,7 @@ class User(BaseModel):
     # Authentication fields
     email = Column(String, unique=True, nullable=False, index=True)
     google_id = Column(String, unique=True, nullable=True, index=True)
+    hashed_password = Column(String, nullable=True)  # For email/password authentication
     
     # Profile fields
     name = Column(String, nullable=False)

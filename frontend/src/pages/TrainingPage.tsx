@@ -22,6 +22,8 @@ const TrainingPage: React.FC = () => {
   const handleExerciseComplete = () => {
     setSelectedExercise(null);
     setActiveTab('progress');
+    // Force a re-render by updating a key
+    window.dispatchEvent(new Event('exerciseCompleted'));
   };
 
   const handleExitExercise = () => {

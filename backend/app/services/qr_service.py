@@ -78,6 +78,11 @@ def _format_emergency_text(medical_info: Dict[str, Any]) -> str:
     Returns:
         Formatted text string for QR code
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Formatting emergency text with medical_info keys: {medical_info.keys()}")
+    logger.info(f"Emergency contacts count: {len(medical_info.get('emergency_contacts', []))}")
+    
     lines = ["🚨 EMERGENCY MEDICAL INFO 🚨", ""]
     
     # Patient name
@@ -92,19 +97,23 @@ def _format_emergency_text(medical_info: Dict[str, Any]) -> str:
     
     # Emergency contacts
     emergency_contacts = medical_info.get('emergency_contacts', [])
-    if emergency_contacts:
+    if emergency_contacts and len(emergency_contacts) > 0:
         lines.append("EMERGENCY CONTACTS:")
         for i, contact in enumerate(emergency_contacts[:3], 1):  # Limit to 3 contacts
             if isinstance(contact, dict):
                 name = contact.get('name', 'Unknown')
                 phone = contact.get('phone', 'N/A')
-                relationship = contact.get('relationship', '')
+                relationship = contact.get('relationship', contact.get('relationship_type', ''))
                 lines.append(f"{i}. {name}")
                 if relationship:
                     lines.append(f"   ({relationship})")
                 lines.append(f"   Tel: {phone}")
             elif isinstance(contact, str):
                 lines.append(f"{i}. {contact}")
+        lines.append("")
+    else:
+        # If no contacts, add a note
+        lines.append("EMERGENCY CONTACTS: None listed")
         lines.append("")
     
     # Medications

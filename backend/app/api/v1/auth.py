@@ -45,6 +45,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     user: dict
+    is_new_user: bool = False
     
     class Config:
         json_schema_extra = {
@@ -52,6 +53,7 @@ class TokenResponse(BaseModel):
                 "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                 "token_type": "bearer",
+                "is_new_user": False,
                 "user": {
                     "id": "123e4567-e89b-12d3-a456-426614174000",
                     "email": "user@example.com",
@@ -82,6 +84,36 @@ class DevLoginRequest(BaseModel):
             "example": {
                 "email": "abbhivadhan279@gmail.com",
                 "password": "123456"
+            }
+        }
+
+
+class RegisterRequest(BaseModel):
+    """Request model for user registration"""
+    email: EmailStr
+    password: str
+    name: Optional[str] = None
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "password": "securepassword123",
+                "name": "John Doe"
+            }
+        }
+
+
+class LoginRequest(BaseModel):
+    """Request model for email/password login"""
+    email: EmailStr
+    password: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "password": "securepassword123"
             }
         }
 
@@ -170,8 +202,217 @@ async def dev_login(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
-        user=user_data
+        user=user_data,
+        is_new_user=False
     )
+
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register(
+    register_request: RegisterRequest,
+    response: Response,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new user with email and password.
+    
+    This endpoint:
+    1. Validates the email is not already registered
+    2. Hashes the password securely
+    3. Creates a new user in the database
+    4. Generates JWT access and refresh tokens
+    5. Sets refresh token as HTTP-only cookie
+    
+    Args:
+        register_request: User registration data
+        response: FastAPI response object for setting cookies
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        TokenResponse with access token, refresh token, and user info
+        
+    Raises:
+        HTTPException: If email is already registered or validation fails
+    """
+    try:
+        # Check if user already exists
+        existing_user = AuthService.get_user_by_email(db, register_request.email)
+        if existing_user:
+            audit_logger.log_auth_event(
+                action="register",
+                result="failure",
+                email=register_request.email,
+                ip=_get_request_ip(request),
+                metadata={"reason": "email_already_exists"},
+                request_id=getattr(request.state, "request_id", None),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        # Create new user with hashed password
+        user = AuthService.create_user_with_password(
+            db=db,
+            email=register_request.email,
+            password=register_request.password,
+            name=register_request.name or register_request.email.split('@')[0]
+        )
+        
+        # Create JWT tokens
+        tokens = AuthService.create_tokens_for_user(user)
+        
+        # Set refresh token as HTTP-only cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh_token"],
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=7 * 24 * 60 * 60  # 7 days
+        )
+        
+        audit_logger.log_auth_event(
+            action="register",
+            result="success",
+            user_id=str(user.id),
+            email=user.email,
+            ip=_get_request_ip(request),
+            metadata={"provider": "email"},
+            request_id=getattr(request.state, "request_id", None),
+        )
+        logger.info(f"New user registered: {user.email}")
+        
+        return TokenResponse(
+            access_token=tokens["access_token"],
+            refresh_token=tokens["refresh_token"],
+            token_type=tokens["token_type"],
+            user=user.to_dict(),
+            is_new_user=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        audit_logger.log_auth_event(
+            action="register",
+            result="error",
+            email=register_request.email,
+            ip=_get_request_ip(request),
+            metadata={"reason": str(e)},
+            request_id=getattr(request.state, "request_id", None),
+        )
+        logger.error(f"Registration error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Registration failed"
+        )
+
+
+@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
+async def login(
+    login_request: LoginRequest,
+    response: Response,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Login user with email and password.
+    
+    This endpoint:
+    1. Validates the email and password
+    2. Generates JWT access and refresh tokens
+    3. Sets refresh token as HTTP-only cookie
+    
+    Args:
+        login_request: User login credentials
+        response: FastAPI response object for setting cookies
+        request: FastAPI request object
+        db: Database session
+        
+    Returns:
+        TokenResponse with access token, refresh token, and user info
+        
+    Raises:
+        HTTPException: If credentials are invalid
+    """
+    user_metadata = {"id": None, "email": login_request.email}
+    
+    try:
+        # Authenticate user
+        user = AuthService.authenticate_user(
+            db=db,
+            email=login_request.email,
+            password=login_request.password
+        )
+        
+        if not user:
+            audit_logger.log_auth_event(
+                action="login",
+                result="failure",
+                email=login_request.email,
+                ip=_get_request_ip(request),
+                metadata={"reason": "invalid_credentials"},
+                request_id=getattr(request.state, "request_id", None),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+        
+        user_metadata["id"] = str(user.id)
+        
+        # Create JWT tokens
+        tokens = AuthService.create_tokens_for_user(user)
+        
+        # Set refresh token as HTTP-only cookie
+        response.set_cookie(
+            key="refresh_token",
+            value=tokens["refresh_token"],
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=7 * 24 * 60 * 60  # 7 days
+        )
+        
+        audit_logger.log_auth_event(
+            action="login",
+            result="success",
+            user_id=user_metadata["id"],
+            email=user_metadata["email"],
+            ip=_get_request_ip(request),
+            metadata={"provider": "email"},
+            request_id=getattr(request.state, "request_id", None),
+        )
+        logger.info(f"User logged in: {user.email}")
+        
+        return TokenResponse(
+            access_token=tokens["access_token"],
+            refresh_token=tokens["refresh_token"],
+            token_type=tokens["token_type"],
+            user=user.to_dict(),
+            is_new_user=False
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        audit_logger.log_auth_event(
+            action="login",
+            result="error",
+            user_id=user_metadata["id"],
+            email=user_metadata["email"],
+            ip=_get_request_ip(request),
+            metadata={"reason": str(e)},
+            request_id=getattr(request.state, "request_id", None),
+        )
+        logger.error(f"Login error: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Login failed"
+        )
 
 
 @router.post("/google", response_model=TokenResponse, status_code=status.HTTP_200_OK)
@@ -208,7 +449,7 @@ async def google_auth(
         user_info = await AuthService.verify_google_token(auth_request.token)
         
         # Get or create user
-        user = AuthService.get_or_create_user(db, user_info)
+        user, is_new_user = AuthService.get_or_create_user(db, user_info)
         user_metadata["id"] = str(user.id)
         user_metadata["email"] = user.email
         
@@ -231,7 +472,7 @@ async def google_auth(
             user_id=user_metadata["id"],
             email=user_metadata["email"],
             ip=_get_request_ip(request),
-            metadata={"provider": "google"},
+            metadata={"provider": "google", "is_new_user": is_new_user},
             request_id=getattr(request.state, "request_id", None),
         )
         logger.info(f"User authenticated successfully: {user.email}")
@@ -240,7 +481,8 @@ async def google_auth(
             access_token=tokens["access_token"],
             refresh_token=tokens["refresh_token"],
             token_type=tokens["token_type"],
-            user=user.to_dict()
+            user=user.to_dict(),
+            is_new_user=is_new_user
         )
         
     except HTTPException as exc:

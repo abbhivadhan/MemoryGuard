@@ -56,3 +56,6 @@ sentry-sdk[fastapi]>=2.0.0
 # QR Code Generation
 qrcode[pil]>=7.4.2
 Pillow>=10.0.0
+
+# RSS Feed Parsing
+feedparser>=6.0.10

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     
     # Data sources
     ADNI_API_KEY: Optional[str] = None
-    ADNI_API_URL: str = "https://ida.loni.usc.edu/services"
+    ADNI_BASE_URL: str = "https://ida.loni.usc.edu/services"
     OASIS_DATA_PATH: Optional[Path] = None
     NACC_DATA_PATH: Optional[Path] = None
     

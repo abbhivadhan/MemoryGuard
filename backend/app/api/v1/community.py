@@ -86,15 +86,18 @@ async def get_posts(
     - **skip**: Number of posts to skip (pagination)
     - **limit**: Maximum number of posts to return
     """
+    from sqlalchemy import cast, Text as TextType
+    
     query = db.query(CommunityPost).filter(CommunityPost.is_moderated == False)
     
+    # Filter by category - cast to text to avoid enum issues
     if category:
-        query = query.filter(CommunityPost.category == category)
+        query = query.filter(cast(CommunityPost.category, TextType) == category.value)
     
-    # Filter by visibility
+    # Filter by visibility - cast to text to avoid enum issues
     query = query.filter(
-        (CommunityPost.visibility == PostVisibility.PUBLIC) |
-        (CommunityPost.visibility == PostVisibility.MEMBERS_ONLY)
+        (cast(CommunityPost.visibility, TextType) == 'public') |
+        (cast(CommunityPost.visibility, TextType) == 'members_only')
     )
     
     posts = query.order_by(CommunityPost.created_at.desc()).offset(skip).limit(limit).all()
@@ -217,6 +220,36 @@ async def create_reply(
     db.refresh(reply)
     
     return _reply_to_response(reply, db)
+
+
+@router.delete("/posts/{post_id}", status_code=200)
+async def delete_post(
+    post_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a post. Only the post author can delete their own posts.
+    
+    - **post_id**: ID of the post to delete
+    """
+    post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    
+    # Check if current user is the author
+    if post.user_id != str(current_user.id):
+        raise HTTPException(status_code=403, detail="You can only delete your own posts")
+    
+    # Delete associated replies and flags
+    db.query(CommunityReply).filter(CommunityReply.post_id == post_id).delete()
+    db.query(ContentFlag).filter(ContentFlag.post_id == post_id).delete()
+    
+    # Delete the post
+    db.delete(post)
+    db.commit()
+    
+    return {"message": "Post deleted successfully"}
 
 
 @router.post("/posts/{post_id}/flag", status_code=201)
@@ -436,3 +469,29 @@ async def match_users(
     matches.sort(key=lambda x: x.match_score, reverse=True)
     
     return matches[:10]  # Return top 10 matches
+
+
+@router.get("/social-feed")
+async def get_social_feed(
+    limit: int = Query(20, ge=1, le=50),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get real social media posts from Alzheimer's organizations via RSS feeds.
+    
+    - **limit**: Maximum number of posts to return (1-50)
+    
+    Returns posts from:
+    - Alzheimer's Association
+    - National Institute on Aging
+    - Alzheimer's Research UK
+    """
+    from app.services.social_media_service import get_social_media_posts
+    
+    try:
+        posts = get_social_media_posts(db, limit)
+        return {"posts": posts, "count": len(posts)}
+    except Exception as e:
+        # Return empty list if RSS feeds fail
+        return {"posts": [], "count": 0, "error": str(e)}

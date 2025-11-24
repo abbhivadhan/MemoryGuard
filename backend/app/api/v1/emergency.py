@@ -25,12 +25,19 @@ class LocationData(BaseModel):
     address: Optional[str] = None
 
 
+class EmergencyContactInfo(BaseModel):
+    name: str
+    phone: str
+    relationship: Optional[str] = None
+
+
 class MedicalInfo(BaseModel):
     medications: Optional[List[str]] = None
     allergies: Optional[List[str]] = None
     conditions: Optional[List[str]] = None
     blood_type: Optional[str] = None
     emergency_notes: Optional[str] = None
+    emergency_contacts: Optional[List[EmergencyContactInfo]] = None
 
 
 class EmergencyAlertCreate(BaseModel):
@@ -468,14 +475,19 @@ async def get_medical_info(
     ).order_by(desc(EmergencyAlert.created_at)).first()
     
     if latest_alert and latest_alert.medical_info:
-        return latest_alert.medical_info
+        # Ensure emergency_contacts field exists
+        medical_info = latest_alert.medical_info
+        if isinstance(medical_info, dict) and 'emergency_contacts' not in medical_info:
+            medical_info['emergency_contacts'] = []
+        return medical_info
     
     return {
         "medications": [],
         "allergies": [],
         "conditions": [],
         "blood_type": "",
-        "emergency_notes": ""
+        "emergency_notes": "",
+        "emergency_contacts": []
     }
 
 
@@ -504,6 +516,83 @@ async def update_medical_info(
     db.refresh(alert)
     
     return alert.medical_info
+
+
+@router.get("/medical-info/debug", response_model=dict)
+async def debug_medical_info(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Debug endpoint to check what medical info will be included in QR code.
+    """
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Get emergency contacts
+        emergency_contacts = db.query(EmergencyContact).filter(
+            EmergencyContact.user_id == current_user.id,
+            EmergencyContact.active == True
+        ).order_by(EmergencyContact.priority).all()
+        
+        # Get active medications
+        from app.models.medication import Medication
+        medications = db.query(Medication).filter(
+            Medication.user_id == current_user.id,
+            Medication.active == True
+        ).all()
+        
+        # Get latest medical info
+        latest_alert = db.query(EmergencyAlert).filter(
+            EmergencyAlert.user_id == current_user.id,
+            EmergencyAlert.medical_info.isnot(None)
+        ).order_by(desc(EmergencyAlert.created_at)).first()
+        
+        # Get contacts from medical_info
+        contacts_from_medical_info = []
+        if latest_alert and latest_alert.medical_info:
+            if isinstance(latest_alert.medical_info, dict):
+                contacts_from_medical_info = latest_alert.medical_info.get("emergency_contacts", [])
+        
+        return {
+            "user_id": str(current_user.id),
+            "user_email": current_user.email,
+            "user_name": current_user.name if hasattr(current_user, 'name') else None,
+            "emergency_contacts_table_count": len(emergency_contacts),
+            "emergency_contacts_from_table": [
+                {
+                    "id": str(contact.id),
+                    "name": contact.name,
+                    "phone": contact.phone,
+                    "relationship": contact.relationship_type,
+                    "active": contact.active
+                }
+                for contact in emergency_contacts
+            ],
+            "emergency_contacts_from_medical_info_count": len(contacts_from_medical_info),
+            "emergency_contacts_from_medical_info": contacts_from_medical_info,
+            "medications_count": len(medications),
+            "medications": [
+                {
+                    "name": med.name,
+                    "dosage": getattr(med, 'dosage', ''),
+                    "frequency": getattr(med, 'frequency', '')
+                }
+                for med in medications
+            ],
+            "has_medical_info_alert": latest_alert is not None,
+            "medical_info_from_alert": latest_alert.medical_info if latest_alert else None,
+            "which_contacts_will_be_used": "table" if len(emergency_contacts) > 0 else "medical_info" if len(contacts_from_medical_info) > 0 else "none"
+        }
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error in debug endpoint: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Debug failed: {str(e)}"
+        )
 
 
 @router.post("/medical-info/qr-code", response_model=dict)
@@ -536,6 +625,8 @@ async def generate_medical_qr_code(
             EmergencyContact.active == True
         ).order_by(EmergencyContact.priority).all()
         
+        logger.info(f"Found {len(emergency_contacts)} emergency contacts for user {current_user.id}")
+        
         # Get active medications
         from app.models.medication import Medication
         medications = db.query(Medication).filter(
@@ -543,25 +634,47 @@ async def generate_medical_qr_code(
             Medication.active == True
         ).all()
         
+        logger.info(f"Found {len(medications)} medications for user {current_user.id}")
+        
+        # Start with contacts from emergency_contacts table
+        contacts_from_table = [
+            {
+                "name": contact.name,
+                "phone": contact.phone,
+                "relationship": contact.relationship_type,
+                "email": contact.email if hasattr(contact, 'email') else None
+            }
+            for contact in emergency_contacts
+        ]
+        
+        logger.info(f"Found {len(contacts_from_table)} contacts from emergency_contacts table")
+        
+        # Get contacts from medical_info if available
+        contacts_from_medical_info = []
+        if latest_alert and latest_alert.medical_info:
+            if isinstance(latest_alert.medical_info, dict):
+                contacts_from_medical_info = latest_alert.medical_info.get("emergency_contacts", [])
+                logger.info(f"Found {len(contacts_from_medical_info)} contacts from medical_info")
+        
+        # Use contacts from medical_info if table is empty, otherwise prefer table
+        # This prioritizes the dedicated emergency_contacts table but falls back to medical_info
+        final_contacts = contacts_from_table if contacts_from_table else contacts_from_medical_info
+        
+        logger.info(f"Using {len(final_contacts)} contacts for QR code")
+        if final_contacts:
+            logger.info(f"Contact details: {final_contacts}")
+        
         # Build comprehensive medical info
         medical_info = {
             "user_id": str(current_user.id),
-            "name": current_user.name,
+            "name": current_user.name if hasattr(current_user, 'name') else current_user.email,
             "email": current_user.email,
-            "emergency_contacts": [
-                {
-                    "name": contact.name,
-                    "phone": contact.phone,
-                    "relationship": contact.relationship_type,
-                    "email": contact.email
-                }
-                for contact in emergency_contacts
-            ],
+            "emergency_contacts": final_contacts,
             "medications": [
                 {
                     "name": med.name,
-                    "dosage": med.dosage,
-                    "frequency": med.frequency
+                    "dosage": med.dosage if hasattr(med, 'dosage') else '',
+                    "frequency": med.frequency if hasattr(med, 'frequency') else ''
                 }
                 for med in medications
             ]

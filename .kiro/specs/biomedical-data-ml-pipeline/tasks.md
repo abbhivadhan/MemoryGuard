@@ -23,8 +23,8 @@
     - Implement caching utilities
     - _Requirements: 12.3_
 
-- [ ] 2. Implement data acquisition layer
-  - [ ] 2.1 Create ADNI data loader
+- [x] 2. Implement data acquisition layer
+  - [x] 2.1 Create ADNI data loader
     - Implement API client for ADNI data access
     - Create parsers for cognitive assessments
     - Create parsers for CSF biomarkers
@@ -32,25 +32,25 @@
     - Create parsers for genetic data
     - _Requirements: 1.1, 1.4_
   
-  - [ ] 2.2 Create OASIS data loader
+  - [x] 2.2 Create OASIS data loader
     - Implement file reader for OASIS datasets
     - Parse MRI volumetric data
     - Extract CDR scores and demographics
     - _Requirements: 1.2, 1.4_
   
-  - [ ] 2.3 Create NACC data loader
+  - [x] 2.3 Create NACC data loader
     - Implement NACC data file parser
     - Extract clinical assessments
     - Parse medical history data
     - _Requirements: 1.3, 1.4_
   
-  - [ ] 2.4 Implement schema validation
+  - [x] 2.4 Implement schema validation
     - Create schema definitions for each dataset
     - Validate data format and structure
     - Log validation errors
     - _Requirements: 1.6_
   
-  - [ ] 2.5 Implement data provenance tracking
+  - [x] 2.5 Implement data provenance tracking
     - Track data source and ingestion timestamp
     - Maintain lineage metadata
     - _Requirements: 1.7, 16.7_

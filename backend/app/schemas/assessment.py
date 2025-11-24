@@ -11,9 +11,9 @@ from enum import Enum
 class AssessmentTypeEnum(str, Enum):
     """Types of cognitive assessments"""
     MMSE = "MMSE"
-    MOCA = "MoCA"
+    MoCA = "MoCA"
     CDR = "CDR"
-    CLOCK_DRAWING = "ClockDrawing"
+    ClockDrawing = "ClockDrawing"
 
 
 class AssessmentStatusEnum(str, Enum):

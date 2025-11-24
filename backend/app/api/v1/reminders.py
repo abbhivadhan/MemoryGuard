@@ -31,22 +31,39 @@ async def create_reminder(
     """
     Create a new reminder for the current user.
     """
-    reminder = Reminder(
-        user_id=current_user.id,
-        title=reminder_data.title,
-        description=reminder_data.description,
-        reminder_type=reminder_data.reminder_type,  # String value, SQLAlchemy will handle enum conversion
-        scheduled_time=reminder_data.scheduled_time,
-        frequency=reminder_data.frequency,  # String value, SQLAlchemy will handle enum conversion
-        send_notification=reminder_data.send_notification,
-        related_entity_id=reminder_data.related_entity_id
-    )
-    
-    db.add(reminder)
-    db.commit()
-    db.refresh(reminder)
-    
-    return reminder
+    try:
+        # Convert to lowercase to match database enum values
+        reminder = Reminder(
+            user_id=current_user.id,
+            title=reminder_data.title,
+            description=reminder_data.description,
+            reminder_type=reminder_data.reminder_type.lower(),  # Convert to lowercase
+            scheduled_time=reminder_data.scheduled_time,
+            frequency=reminder_data.frequency.lower(),  # Convert to lowercase
+            send_notification=reminder_data.send_notification,
+            related_entity_id=reminder_data.related_entity_id
+        )
+        
+        db.add(reminder)
+        db.commit()
+        db.refresh(reminder)
+        
+        return reminder
+    except ValueError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid enum value: {str(e)}"
+        )
+    except Exception as e:
+        db.rollback()
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error creating reminder: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create reminder: {str(e)}"
+        )
 
 
 @router.get("/", response_model=ReminderListResponse)

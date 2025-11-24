@@ -44,8 +44,50 @@ const MedicationReminders: React.FC = () => {
     e.preventDefault();
 
     try {
-      // Create a reminder for each scheduled time
+      // First, create or update the medication record
+      const { medicationService } = await import('../../services/medicationService');
+      
+      // Check if medication already exists
+      const medsData = await medicationService.getMedications(true);
+      let medication = medsData.medications.find(m => m.name === newMedication.medication_name);
+      
+      // Generate schedule times for the next 30 days
+      const schedule: string[] = [];
       const today = new Date();
+      for (let day = 0; day < 30; day++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + day);
+        
+        // Check if this day is in the selected days
+        if (newMedication.days.includes(date.getDay())) {
+          newMedication.times.forEach(time => {
+            const [hours, minutes] = time.split(':').map(Number);
+            const scheduledTime = new Date(date);
+            scheduledTime.setHours(hours, minutes, 0, 0);
+            schedule.push(scheduledTime.toISOString());
+          });
+        }
+      }
+      
+      if (!medication) {
+        // Create new medication
+        medication = await medicationService.createMedication({
+          name: newMedication.medication_name,
+          dosage: newMedication.dosage,
+          frequency: `${newMedication.times.length}x daily`,
+          schedule: schedule,
+          instructions: 'Created from reminders',
+        });
+        console.log(`Created medication: ${medication.name} with ${schedule.length} scheduled doses`);
+      } else {
+        // Update existing medication schedule
+        await medicationService.updateMedication(medication.id, {
+          schedule: schedule,
+        });
+        console.log(`Updated medication: ${medication.name} with ${schedule.length} scheduled doses`);
+      }
+
+      // Create a reminder for each scheduled time (next occurrence)
       const promises = newMedication.times.map(async (time) => {
         const [hours, minutes] = time.split(':').map(Number);
         const scheduledTime = new Date(today);
@@ -86,7 +128,53 @@ const MedicationReminders: React.FC = () => {
 
   const handleCompleteReminder = async (reminderId: string) => {
     try {
+      // Find the reminder to get medication info
+      const reminder = reminders.find(r => r.id === reminderId);
+      if (!reminder) return;
+
+      // Complete the reminder
       await reminderService.completeReminder(reminderId);
+
+      // Also log the medication adherence if it's a medication reminder
+      if (reminder.reminder_type === 'medication') {
+        try {
+          // Extract medication name from title (format: "Take {medication_name}")
+          const medName = reminder.title.replace('Take ', '');
+          
+          // Get all medications to find the matching one
+          const { medicationService } = await import('../../services/medicationService');
+          const medsData = await medicationService.getMedications(true);
+          let medication = medsData.medications.find(m => m.name === medName);
+          
+          // If medication doesn't exist, create it
+          if (!medication) {
+            console.log(`Creating medication record for: ${medName}`);
+            const dosage = reminder.description?.replace('Dosage: ', '') || 'As prescribed';
+            medication = await medicationService.createMedication({
+              name: medName,
+              dosage: dosage,
+              frequency: reminder.frequency || 'daily',
+              schedule: [reminder.scheduled_time],
+              instructions: 'Created from reminder',
+            });
+          }
+          
+          if (medication) {
+            // Log the medication as taken
+            await medicationService.logMedication(medication.id, {
+              scheduled_time: reminder.scheduled_time,
+              taken_time: new Date().toISOString(),
+              skipped: false,
+              notes: 'Logged from reminder',
+            });
+            console.log(`Logged medication adherence for ${medName}`);
+          }
+        } catch (logError) {
+          console.error('Failed to log medication adherence:', logError);
+          // Don't fail the whole operation if logging fails
+        }
+      }
+
       loadMedicationReminders();
     } catch (error) {
       console.error('Failed to complete reminder:', error);
@@ -153,7 +241,7 @@ const MedicationReminders: React.FC = () => {
         <h2 className="text-3xl font-bold text-blue-50">Medication Reminders</h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg"
         >
           {showAddForm ? 'Cancel' : '+ Add Medication'}
         </button>
@@ -169,7 +257,7 @@ const MedicationReminders: React.FC = () => {
             onSubmit={createMedicationReminders}
             className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 mb-6"
           >
-            <h3 className="text-xl font-semibold mb-4">Add Medication Schedule</h3>
+            <h3 className="text-xl font-semibold mb-4 text-blue-50">Add Medication Schedule</h3>
 
             <div className="space-y-4">
               <div>
@@ -227,7 +315,7 @@ const MedicationReminders: React.FC = () => {
                 <button
                   type="button"
                   onClick={addTimeSlot}
-                  className="mt-2 px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                   + Add Time
                 </button>
@@ -259,7 +347,7 @@ const MedicationReminders: React.FC = () => {
                       className={`px-3 py-2 rounded-lg transition-colors ${
                         newMedication.days.includes(index)
                           ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-300'
+                          : 'bg-gray-600 text-white'
                       }`}
                     >
                       {day}
@@ -273,13 +361,13 @@ const MedicationReminders: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg"
               >
                 Create Reminders
               </button>
@@ -295,10 +383,10 @@ const MedicationReminders: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-gray-500 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
+              className="text-center py-12 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
             >
-              <p className="text-xl mb-2">No medication reminders</p>
-              <p className="text-sm">Add your first medication to get started</p>
+              <p className="text-xl mb-2 text-white">No medication reminders</p>
+              <p className="text-sm text-gray-400">Add your first medication to get started</p>
             </motion.div>
           ) : (
             reminders.map((reminder) => (
@@ -318,7 +406,7 @@ const MedicationReminders: React.FC = () => {
                       <span className="px-2 py-1 rounded text-xs text-white bg-blue-500">
                         Medication
                       </span>
-                      <span className="px-2 py-1 rounded text-xs bg-gray-200 text-gray-300">
+                      <span className="px-2 py-1 rounded text-xs bg-gray-600 text-white">
                         {reminder.frequency}
                       </span>
                     </div>
@@ -335,10 +423,10 @@ const MedicationReminders: React.FC = () => {
                       <p className="text-gray-400 text-sm mb-2">{reminder.description}</p>
                     )}
 
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>⏰ {formatTime(reminder.scheduled_time)}</span>
+                    <div className="flex items-center gap-4 text-sm text-gray-400">
+                      <span>{formatTime(reminder.scheduled_time)}</span>
                       {reminder.is_completed && reminder.completed_at && (
-                        <span className="text-green-600">
+                        <span className="text-green-400">
                           ✓ Taken {formatTime(reminder.completed_at)}
                         </span>
                       )}
@@ -346,14 +434,26 @@ const MedicationReminders: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col gap-2 ml-4">
-                    {!reminder.is_completed && (
-                      <button
-                        onClick={() => handleCompleteReminder(reminder.id)}
-                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition-colors text-sm"
-                      >
-                        Mark Taken
-                      </button>
-                    )}
+                    {!reminder.is_completed && (() => {
+                      const scheduledTime = new Date(reminder.scheduled_time);
+                      const now = new Date();
+                      const isFuture = scheduledTime > now;
+                      
+                      return (
+                        <button
+                          onClick={() => handleCompleteReminder(reminder.id)}
+                          disabled={isFuture}
+                          className={`px-3 py-1 rounded transition-colors text-sm ${
+                            isFuture
+                              ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-50'
+                              : 'bg-green-500 text-white hover:bg-green-600'
+                          }`}
+                          title={isFuture ? 'Cannot mark as taken before scheduled time' : 'Mark as taken'}
+                        >
+                          {isFuture ? 'Not Due Yet' : 'Mark Taken'}
+                        </button>
+                      );
+                    })()}
                     <button
                       onClick={() => handleDeleteReminder(reminder.id)}
                       className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"

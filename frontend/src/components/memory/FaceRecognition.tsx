@@ -20,6 +20,9 @@ const FaceRecognition: React.FC = () => {
     relationship: '',
     notes: '',
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [faceEmbedding, setFaceEmbedding] = useState<number[] | null>(null);
 
   useEffect(() => {
     loadProfiles();
@@ -105,15 +108,6 @@ const FaceRecognition: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate name is filled
-    if (!newProfile.name.trim()) {
-      alert('Please enter a name before uploading a photo.');
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      return;
-    }
-
     if (!modelsLoaded) {
       alert('Face recognition models are still loading. Please wait a moment and try again.');
       if (fileInputRef.current) {
@@ -122,38 +116,74 @@ const FaceRecognition: React.FC = () => {
       return;
     }
 
+    setSelectedFile(file);
+    const preview = URL.createObjectURL(file);
+    setPreviewUrl(preview);
+
+    // Extract face embedding for validation
     const img = new Image();
-    img.src = URL.createObjectURL(file);
+    img.src = preview;
 
     img.onload = async () => {
       const embedding = await extractFaceEmbedding(img);
       if (embedding) {
-        try {
-          // In a real app, you'd upload the photo to storage and get a URL
-          const photoUrl = URL.createObjectURL(file);
-
-          await faceService.createProfile({
-            name: newProfile.name,
-            relationship: newProfile.relationship,
-            notes: newProfile.notes,
-            face_embedding: embedding,
-            photo_url: photoUrl,
-          });
-
-          alert(`Successfully added ${newProfile.name} to your profiles!`);
-          setShowAddForm(false);
-          setNewProfile({ name: '', relationship: '', notes: '' });
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-          loadProfiles();
-        } catch (error) {
-          console.error('Failed to create profile:', error);
-          alert('Failed to create profile. Please try again.');
+        setFaceEmbedding(embedding);
+      } else {
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setFaceEmbedding(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
         }
       }
-      URL.revokeObjectURL(img.src);
     };
+  };
+
+  const handleSaveProfile = async () => {
+    if (!newProfile.name.trim()) {
+      alert('Please enter a name.');
+      return;
+    }
+
+    if (!selectedFile || !faceEmbedding) {
+      alert('Please upload a photo with a clear face.');
+      return;
+    }
+
+    try {
+      // Convert image to base64 data URL for persistent storage
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const photoUrl = reader.result as string;
+
+        await faceService.createProfile({
+          name: newProfile.name,
+          relationship: newProfile.relationship,
+          notes: newProfile.notes,
+          face_embedding: faceEmbedding,
+          photo_url: photoUrl,
+        });
+
+        alert(`Successfully added ${newProfile.name} to your profiles!`);
+        setShowAddForm(false);
+        setNewProfile({ name: '', relationship: '', notes: '' });
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setFaceEmbedding(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        loadProfiles();
+      };
+      reader.onerror = () => {
+        console.error('Failed to read file');
+        alert('Failed to process image. Please try again.');
+      };
+      reader.readAsDataURL(selectedFile);
+    } catch (error) {
+      console.error('Failed to create profile:', error);
+      alert('Failed to create profile. Please try again.');
+    }
   };
 
   const recognizeFace = async () => {
@@ -279,6 +309,46 @@ const FaceRecognition: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-1">
                   Upload a clear photo showing the person's face
                 </p>
+                {previewUrl && (
+                  <div className="mt-3">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded-lg border border-white/10"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleSaveProfile}
+                  disabled={!newProfile.name.trim() || !selectedFile}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save Profile
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewProfile({ name: '', relationship: '', notes: '' });
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                    setFaceEmbedding(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                  className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-all border border-white/10"
+                >
+                  Cancel
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -393,12 +463,32 @@ const FaceRecognition: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-4 hover:border-pink-500/30 transition-all"
               >
-                {profile.photo_url && (
+                {profile.photo_url ? (
                   <img
                     src={profile.photo_url}
                     alt={profile.name}
                     className="w-full h-48 object-cover rounded-lg mb-3 border border-white/10"
+                    onError={(e) => {
+                      // If image fails to load, hide it
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
+                ) : (
+                  <div className="w-full h-48 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-lg mb-3 border border-white/10 flex items-center justify-center">
+                    <svg
+                      className="w-20 h-20 text-white/30"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                      />
+                    </svg>
+                  </div>
                 )}
                 <h4 className="text-lg font-semibold text-blue-50">{profile.name}</h4>
                 {profile.relationship && (

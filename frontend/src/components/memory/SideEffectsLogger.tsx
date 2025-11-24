@@ -88,13 +88,13 @@ const SideEffectsLogger: React.FC = () => {
   const getSeverityColor = (severity: string) => {
     switch (severity.toLowerCase()) {
       case 'mild':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-500 text-white';
       case 'moderate':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-500 text-white';
       case 'severe':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-600 text-white';
       default:
-        return 'bg-gray-100 text-blue-50';
+        return 'bg-gray-600 text-white';
     }
   };
 
@@ -119,10 +119,10 @@ const SideEffectsLogger: React.FC = () => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-12 text-gray-500 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
+              className="text-center py-12 text-gray-300 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg"
             >
-              <p className="text-xl mb-2">No active medications</p>
-              <p className="text-sm">Add medications to track side effects</p>
+              <p className="text-xl mb-2 text-white">No active medications</p>
+              <p className="text-sm text-gray-400">Add medications to track side effects</p>
             </motion.div>
           ) : (
             medications.map((med) => (
@@ -139,7 +139,7 @@ const SideEffectsLogger: React.FC = () => {
                       <span className="text-2xl">💊</span>
                       <h3 className="text-lg font-semibold text-blue-50">{med.name}</h3>
                       {med.side_effects && med.side_effects.length > 0 && (
-                        <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                        <span className="px-2 py-1 bg-orange-500 text-white rounded-full text-xs font-medium">
                           {med.side_effects.length} side effect{med.side_effects.length !== 1 ? 's' : ''}
                         </span>
                       )}
@@ -150,7 +150,7 @@ const SideEffectsLogger: React.FC = () => {
                   </div>
                   <button
                     onClick={() => openAddForm(med)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg"
                   >
                     + Add Side Effect
                   </button>
@@ -158,7 +158,7 @@ const SideEffectsLogger: React.FC = () => {
 
                 {/* Side effects list */}
                 {med.side_effects && med.side_effects.length > 0 ? (
-                  <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="mt-4 pt-4 border-t border-gray-600">
                     <h4 className="text-sm font-medium text-gray-300 mb-3">Reported Side Effects</h4>
                     <div className="space-y-2">
                       {med.side_effects.map((effect, idx) => {
@@ -166,11 +166,11 @@ const SideEffectsLogger: React.FC = () => {
                         return (
                           <div
                             key={idx}
-                            className="flex items-start justify-between p-3 bg-gray-50 rounded-lg"
+                            className="flex items-start justify-between p-3 bg-white/10 rounded-lg"
                           >
                             <div className="flex-1">
                               <p className="text-blue-50 font-medium">{parsed.description}</p>
-                              <p className="text-xs text-gray-500 mt-1">{parsed.date}</p>
+                              <p className="text-xs text-gray-400 mt-1">{parsed.date}</p>
                             </div>
                             {parsed.severity && (
                               <span
@@ -187,7 +187,7 @@ const SideEffectsLogger: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-4 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
+                  <div className="mt-4 pt-4 border-t border-gray-600 text-center text-gray-400 text-sm">
                     No side effects reported for this medication
                   </div>
                 )}
@@ -211,10 +211,10 @@ const SideEffectsLogger: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
+              className="bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full border border-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-blue-50 mb-4">
+              <h3 className="text-xl font-bold text-white mb-4">
                 Report Side Effect: {selectedMed.name}
               </h3>
 
@@ -273,8 +273,8 @@ const SideEffectsLogger: React.FC = () => {
                   />
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
-                  <p className="text-sm text-yellow-800">
+                <div className="bg-yellow-900/30 border border-yellow-600 rounded-lg p-3 mt-4">
+                  <p className="text-sm text-yellow-200">
                     <strong>Important:</strong> If you're experiencing severe side effects, contact
                     your healthcare provider immediately.
                   </p>
@@ -284,13 +284,13 @@ const SideEffectsLogger: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowAddForm(false)}
-                    className="px-4 py-2 bg-gray-200 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:from-teal-600 hover:to-cyan-600 transition-all shadow-lg"
                   >
                     Report Side Effect
                   </button>
@@ -305,23 +305,23 @@ const SideEffectsLogger: React.FC = () => {
       <div className="mt-6 backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-50 mb-4">Side Effects Summary</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-3xl font-bold text-blue-50">
+          <div className="text-center p-4 bg-white/10 rounded-lg">
+            <p className="text-3xl font-bold text-white">
               {medications.reduce((sum, med) => sum + (med.side_effects?.length || 0), 0)}
             </p>
-            <p className="text-sm text-gray-400 mt-1">Total Side Effects</p>
+            <p className="text-sm text-gray-300 mt-1">Total Side Effects</p>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-3xl font-bold text-blue-50">
+          <div className="text-center p-4 bg-white/10 rounded-lg">
+            <p className="text-3xl font-bold text-white">
               {medications.filter((med) => med.side_effects && med.side_effects.length > 0).length}
             </p>
-            <p className="text-sm text-gray-400 mt-1">Medications with Side Effects</p>
+            <p className="text-sm text-gray-300 mt-1">Medications with Side Effects</p>
           </div>
-          <div className="text-center p-4 bg-gray-50 rounded-lg">
-            <p className="text-3xl font-bold text-blue-50">
+          <div className="text-center p-4 bg-white/10 rounded-lg">
+            <p className="text-3xl font-bold text-white">
               {medications.filter((med) => !med.side_effects || med.side_effects.length === 0).length}
             </p>
-            <p className="text-sm text-gray-400 mt-1">Medications without Side Effects</p>
+            <p className="text-sm text-gray-300 mt-1">Medications without Side Effects</p>
           </div>
         </div>
       </div>

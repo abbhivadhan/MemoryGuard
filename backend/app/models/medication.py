@@ -73,15 +73,32 @@ class Medication(BaseModel):
             return 0.0
         
         cutoff_time = datetime.utcnow().timestamp() - (days * 24 * 60 * 60)
-        recent_logs = [
-            log for log in self.adherence_log
-            if datetime.fromisoformat(log.get("scheduled_time", "")).timestamp() >= cutoff_time
-        ]
+        recent_logs = []
+        
+        for log in self.adherence_log:
+            scheduled_time_str = log.get("scheduled_time", "")
+            if not scheduled_time_str:
+                continue
+            
+            try:
+                # Handle both ISO format with 'Z' and without
+                scheduled_time_str = scheduled_time_str.replace('Z', '+00:00')
+                scheduled_time = datetime.fromisoformat(scheduled_time_str)
+                
+                if scheduled_time.timestamp() >= cutoff_time:
+                    recent_logs.append(log)
+            except (ValueError, AttributeError):
+                # Skip logs with invalid time format
+                continue
         
         if not recent_logs:
             return 0.0
         
-        taken_count = sum(1 for log in recent_logs if not log.get("skipped", True))
+        # Count logs that were taken (not skipped and have taken_time)
+        taken_count = sum(
+            1 for log in recent_logs 
+            if log.get("taken_time") and not log.get("skipped", False)
+        )
         return (taken_count / len(recent_logs)) * 100
     
     def to_dict(self):

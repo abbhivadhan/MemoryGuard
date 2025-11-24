@@ -1,15 +1,16 @@
 import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, BookOpen, Users } from 'lucide-react';
+import { ArrowLeft, MessageCircle, BookOpen, Users, Rss } from 'lucide-react';
 import PostList from '../components/community/PostList';
 import CreatePostForm from '../components/community/CreatePostForm';
 import UserMatching from '../components/community/UserMatching';
 import EducationalResources from '../components/community/EducationalResources';
+import SocialMediaFeed from '../components/community/SocialMediaFeed';
 import Scene from '../components/3d/Scene';
 import Starfield from '../components/3d/Starfield';
 
-type TabType = 'forum' | 'resources' | 'matches';
+type TabType = 'forum' | 'resources' | 'social' | 'matches';
 
 export default function CommunityPage() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function CommunityPage() {
   const tabs = [
     { id: 'forum' as TabType, label: 'Forum', icon: <MessageCircle className="w-5 h-5" /> },
     { id: 'resources' as TabType, label: 'Resources', icon: <BookOpen className="w-5 h-5" /> },
+    { id: 'social' as TabType, label: 'Social Feed', icon: <Rss className="w-5 h-5" /> },
     { id: 'matches' as TabType, label: 'Connect', icon: <Users className="w-5 h-5" /> },
   ];
 
@@ -186,6 +188,8 @@ export default function CommunityPage() {
           )}
 
           {activeTab === 'resources' && <EducationalResources />}
+          
+          {activeTab === 'social' && <SocialMediaFeed />}
           
           {activeTab === 'matches' && <UserMatching />}
         </motion.div>
