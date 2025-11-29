@@ -16,7 +16,7 @@ const Shape3D: React.FC<{
   scale?: number;
   onClick?: () => void;
   isAnswer?: boolean;
-}> = ({ type, color, position, scale = 1, onClick, isAnswer }) => {
+}> = ({ type, color, position, scale = 1, onClick }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 

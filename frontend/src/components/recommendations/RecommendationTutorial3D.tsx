@@ -22,7 +22,7 @@ interface RecommendationTutorial3DProps {
 // Animated exercise figure
 const ExerciseFigure: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null);
-  const [phase, setPhase] = useState(0);
+  const [,] = useState(0);
 
   useFrame((state) => {
     if (groupRef.current) {

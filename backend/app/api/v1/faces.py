@@ -186,6 +186,7 @@ async def recognize_face(
     """
     Recognize a face by comparing the embedding against stored profiles.
     Returns matches sorted by similarity score.
+    If the model is not confident enough, returns no match.
     """
     # Get all face profiles for the user
     profiles = db.query(FaceProfile).filter(
@@ -200,14 +201,18 @@ async def recognize_face(
     
     # Calculate similarity for each profile
     matches = []
+    # Set a minimum confidence threshold - only return matches with medium or high confidence
+    MINIMUM_CONFIDENCE_THRESHOLD = 0.70  # 70% similarity minimum
+    
     for profile in profiles:
         similarity = cosine_similarity(
             recognition_data.face_embedding,
             profile.face_embedding
         )
         
-        # Only include matches above threshold
-        if similarity >= recognition_data.threshold:
+        # Only include matches above the minimum confidence threshold
+        # This ensures we don't return uncertain matches
+        if similarity >= MINIMUM_CONFIDENCE_THRESHOLD:
             # Determine confidence level
             if similarity >= 0.85:
                 confidence = "high"
@@ -227,7 +232,7 @@ async def recognize_face(
     # Sort by similarity (highest first)
     matches.sort(key=lambda x: x.similarity, reverse=True)
     
-    # Get best match
+    # Get best match - only if it meets the minimum confidence threshold
     best_match = matches[0] if matches else None
     
     return FaceRecognitionResponse(

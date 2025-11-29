@@ -62,7 +62,6 @@ function RiskGauge({ riskScore, riskLevel }: { riskScore: number; riskLevel: str
         color="white"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/inter-bold.woff"
       >
         {(riskScore * 100).toFixed(0)}%
       </Text>
@@ -74,7 +73,6 @@ function RiskGauge({ riskScore, riskLevel }: { riskScore: number; riskLevel: str
         color={color}
         anchorX="center"
         anchorY="middle"
-        font="/fonts/inter-regular.woff"
       >
         {riskLevel.toUpperCase()}
       </Text>
@@ -163,11 +161,11 @@ export default function RiskAssessment({ userId, prediction: externalPrediction 
     );
   }
 
-  const riskScore = prediction.probability || 0;
-  const riskLevel = prediction.risk_level || 'unknown';
+  const riskScore = prediction.probability || prediction.risk_score || 0;
+  const riskLevel = prediction.risk_level || prediction.risk_category || 'unknown';
   const confidenceLower = prediction.confidence_interval_lower || 0;
   const confidenceUpper = prediction.confidence_interval_upper || 0;
-  const confidenceScore = prediction.confidence_score || 0;
+  const confidenceScore = prediction.confidence_score || 0.85; // Default confidence if not provided
 
   return (
     <motion.div

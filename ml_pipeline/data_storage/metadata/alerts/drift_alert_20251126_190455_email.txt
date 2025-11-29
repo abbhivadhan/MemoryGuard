@@ -1,0 +1,37 @@
+To: test@example.com
+Subject: [MEDIUM] Data Drift Alert - test_dataset
+
+
+Data Drift Alert
+================
+
+Alert ID: drift_alert_20251126_190455
+Timestamp: 2025-11-26T19:04:55.794450
+Dataset: test_dataset
+Severity: MEDIUM
+
+Summary
+-------
+Drift Detected: True
+Retraining Recommended: True
+
+Reference Samples: 200
+Current Samples: 100
+
+Features with High PSI (>= 0.2)
+-------------------------------------------------
+  - feature_1: PSI = 0.2500
+  - feature_2: PSI = 0.2200
+
+Features with KS Drift
+----------------------
+  - feature_1: p-value = 0.01
+
+Recommended Actions
+-------------------
+1. Review drift analysis results
+2. Investigate root causes of distribution changes
+3. Consider retraining models with recent data
+4. Update reference distributions if changes are expected
+
+This alert was generated automatically by the ML Pipeline monitoring system.

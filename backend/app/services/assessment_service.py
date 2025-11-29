@@ -4,13 +4,58 @@ Requirements: 12.3
 """
 
 from typing import Dict, Any, Optional
+import logging
+from app.services.gemini_service import GeminiService
+
+logger = logging.getLogger(__name__)
 
 
 class AssessmentScoringService:
-    """Service for scoring cognitive assessments."""
+    """Service for scoring cognitive assessments with AI-powered evaluation."""
     
-    @staticmethod
-    def score_mmse(responses: Dict[str, Any]) -> int:
+    def __init__(self):
+        self.gemini_service = GeminiService()
+    
+    async def evaluate_answer(self, question: str, user_answer: str, expected_answer: str, context: str = "") -> bool:
+        """
+        Use Gemini AI to intelligently evaluate if an answer is correct.
+        Handles variations, synonyms, and reasonable interpretations.
+        """
+        try:
+            prompt = f"""You are evaluating a cognitive assessment answer. Determine if the user's answer is correct.
+
+Question: {question}
+Expected Answer: {expected_answer}
+User's Answer: {user_answer}
+{f"Context: {context}" if context else ""}
+
+Consider:
+- Synonyms and variations (e.g., "fall" = "autumn")
+- Minor spelling errors
+- Reasonable interpretations
+- Partial credit for close answers
+
+Respond with ONLY "CORRECT" or "INCORRECT" followed by a brief explanation.
+Format: CORRECT|explanation or INCORRECT|explanation"""
+
+            response = await self.gemini_service.generate_content(prompt)
+            
+            if not response:
+                logger.warning(f"No response from Gemini for answer evaluation")
+                return False
+            
+            # Parse response
+            parts = response.split("|", 1)
+            result = parts[0].strip().upper()
+            
+            return result == "CORRECT"
+            
+        except Exception as e:
+            logger.error(f"Error evaluating answer with Gemini: {e}")
+            # Fallback to simple string matching
+            return user_answer.lower().strip() == expected_answer.lower().strip()
+    
+    def score_mmse(self, responses: Dict[str, Any]) -> int:
         """
         Score MMSE (Mini-Mental State Examination) test.
         Total: 30 points
@@ -98,8 +143,7 @@ class AssessmentScoringService:
         
         return score
     
-    @staticmethod
-    def score_moca(responses: Dict[str, Any]) -> int:
+    def score_moca(self, responses: Dict[str, Any]) -> int:
         """
         Score MoCA (Montreal Cognitive Assessment) test.
         Total: 30 points
@@ -198,8 +242,7 @@ class AssessmentScoringService:
         
         return min(score, 30)  # Cap at 30
     
-    @staticmethod
-    def get_max_score(assessment_type: str) -> int:
+    def get_max_score(self, assessment_type: str) -> int:
         """Get maximum score for assessment type."""
         max_scores = {
             "MMSE": 30,
@@ -209,22 +252,21 @@ class AssessmentScoringService:
         }
         return max_scores.get(assessment_type, 0)
     
-    @staticmethod
-    def score_assessment(assessment_type: str, responses: Dict[str, Any]) -> Optional[int]:
+    def score_assessment(self, assessment_type: str, responses: Dict[str, Any]) -> Optional[int]:
         """
         Score an assessment based on its type.
         
         Requirements: 12.3
         """
         if assessment_type == "MMSE":
-            return AssessmentScoringService.score_mmse(responses)
-        elif assessment_type == "MoCA":
-            return AssessmentScoringService.score_moca(responses)
+            return self.score_mmse(responses)
+        elif assessment_type == "MoCA" or assessment_type == "MOCA":
+            return self.score_moca(responses)
         elif assessment_type == "CDR":
             # CDR scoring is more complex and typically done by clinicians
             # Return the score if provided in responses
             return responses.get("cdr_score")
-        elif assessment_type == "ClockDrawing":
+        elif assessment_type == "ClockDrawing" or assessment_type == "CLOCK_DRAWING":
             # Clock drawing typically scored 0-10
             return responses.get("clock_score")
         

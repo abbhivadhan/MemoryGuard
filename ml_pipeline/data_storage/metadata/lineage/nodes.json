@@ -1,0 +1,16 @@
+[
+  {
+    "node_id": "4f18e827-9df8-44a3-95dd-f76541a5407a",
+    "node_type": "data_source",
+    "name": "test_source",
+    "created_at": "2025-11-27T10:10:25.925573",
+    "metadata": {}
+  },
+  {
+    "node_id": "bffc777d-a97f-44cd-8e50-14c9d24d6da7",
+    "node_type": "data_source",
+    "name": "test_source",
+    "created_at": "2025-11-27T10:11:45.528694",
+    "metadata": {}
+  }
+]

@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import HealthMetrics from '../components/dashboard/HealthMetrics';
 import RiskDashboard from '../components/dashboard/RiskDashboard';
 import MedicalDisclaimer from '../components/ui/MedicalDisclaimer';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 import Scene from '../components/3d/Scene';
 import BrainModel from '../components/3d/BrainModel';
 import Starfield from '../components/3d/Starfield';
@@ -21,7 +22,7 @@ type TabType = 'overview' | 'risk' | 'health';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isNewUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
@@ -233,7 +234,9 @@ const DashboardPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
             >
               <span className="text-blue-50">
-                Welcome back, {user?.name?.split(' ')[0]}
+                {isNewUser 
+                  ? `Welcome, ${user?.name?.split(' ')[0]}` 
+                  : `Welcome back, ${user?.name?.split(' ')[0]}`}
               </span>
             </motion.h2>
             <motion.p 
@@ -407,7 +410,9 @@ const DashboardPage: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="backdrop-blur-xl bg-white/5 rounded-2xl p-6 border border-white/10"
             >
-              <HealthMetrics />
+              <ErrorBoundary>
+                <HealthMetrics />
+              </ErrorBoundary>
             </motion.div>
           )}
         </AnimatePresence>

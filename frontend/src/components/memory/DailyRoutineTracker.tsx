@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+
 
 // 3D Progress Ring Component
 const ProgressRing: React.FC<{ progress: number }> = ({ progress }) => {

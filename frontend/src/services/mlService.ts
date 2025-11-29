@@ -1,24 +1,30 @@
 import apiClient from './api';
 
 export interface PredictionResponse {
-  id: number;
-  user_id: number;
-  prediction: number | null;
-  probability: number | null;
-  confidence_score: number | null;
-  confidence_interval_lower: number | null;
-  confidence_interval_upper: number | null;
-  risk_level: string | null;
-  model_version: string | null;
-  status: string;
+  id: string;
+  user_id: string;
+  risk_score: number;
+  probability?: number; // Alias for risk_score
+  risk_category: string;
+  risk_level?: string; // Alias for risk_category
+  confidence_interval_lower: number;
+  confidence_interval_upper: number;
+  confidence_score?: number;
+  feature_importance: Record<string, number>;
+  forecast_six_month: number | null;
+  forecast_twelve_month: number | null;
+  forecast_twenty_four_month: number | null;
+  recommendations: string[];
+  model_version: string;
+  model_type: string;
+  input_features: Record<string, any>;
+  prediction_date: string;
   created_at: string;
-  completed_at: string | null;
-  metadata: Record<string, any> | null;
-  message: string | null;
+  updated_at: string;
 }
 
 export interface ExplanationResponse {
-  prediction_id: number;
+  prediction_id: string;
   top_features: Array<{ feature: string; shap_value: number }>;
   positive_contributors: Array<{ feature: string; contribution: number }>;
   negative_contributors: Array<{ feature: string; contribution: number }>;
@@ -27,7 +33,7 @@ export interface ExplanationResponse {
 }
 
 export interface ForecastResponse {
-  user_id: number;
+  user_id: string;
   forecasts: Record<string, {
     metrics: Record<string, number>;
     risk_score: number;
@@ -38,12 +44,12 @@ export interface ForecastResponse {
 }
 
 export interface PredictionRequest {
-  user_id?: number;
+  user_id?: string;
   health_metrics?: Record<string, number>;
 }
 
 export interface ForecastRequest {
-  user_id?: number;
+  user_id?: string;
   current_metrics: Record<string, number>;
   forecast_months?: number[];
 }
@@ -60,7 +66,7 @@ class MLService {
   /**
    * Get predictions for a user
    */
-  async getUserPredictions(userId: number): Promise<PredictionResponse[]> {
+  async getUserPredictions(userId: string | number): Promise<PredictionResponse[]> {
     const response = await apiClient.get(`/ml/predictions/${userId}`);
     return response.data.predictions || [];
   }
@@ -68,7 +74,7 @@ class MLService {
   /**
    * Get the latest prediction for a user
    */
-  async getLatestPrediction(userId: number): Promise<PredictionResponse | null> {
+  async getLatestPrediction(userId: string | number): Promise<PredictionResponse | null> {
     const predictions = await this.getUserPredictions(userId);
     if (predictions.length === 0) return null;
     
@@ -81,7 +87,7 @@ class MLService {
   /**
    * Get explanation for a prediction
    */
-  async getExplanation(predictionId: number): Promise<ExplanationResponse> {
+  async getExplanation(predictionId: string | number): Promise<ExplanationResponse> {
     const response = await apiClient.get(`/ml/explain/${predictionId}`);
     return response.data;
   }

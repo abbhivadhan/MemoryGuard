@@ -25,7 +25,7 @@ const AlertSystem: React.FC<AlertSystemProps> = ({
     loadAlerts();
     
     // Auto-refresh every 30 seconds
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (autoRefresh) {
       interval = setInterval(loadAlerts, 30000);
     }

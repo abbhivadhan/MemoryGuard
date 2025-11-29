@@ -3,6 +3,9 @@ import { Exercise, exerciseService } from '../../services/exerciseService';
 import CardMemoryGame from './exercises/CardMemoryGame';
 import PatternRecognition from './exercises/PatternRecognition';
 import TowerOfHanoi from './exercises/TowerOfHanoi';
+import NumberSequence from './exercises/NumberSequence';
+import PathFinding from './exercises/PathFinding';
+import LogicPuzzle from './exercises/LogicPuzzle';
 
 interface ExercisePlayerProps {
   exercise: Exercise;
@@ -83,8 +86,16 @@ const ExercisePlayer: React.FC<ExercisePlayerProps> = ({
               onComplete={handleExerciseComplete}
             />
           );
+        } else if (exercise.name.includes('Number Sequence')) {
+          return (
+            <NumberSequence
+              sequenceLength={config.sequence_length || 4}
+              displayTime={config.display_time || 1000}
+              maxNumber={config.max_number || 9}
+              onComplete={handleExerciseComplete}
+            />
+          );
         }
-        // Add other memory games here
         return <div className="text-white">Memory game not implemented</div>;
 
       case 'pattern_recognition':
@@ -104,8 +115,23 @@ const ExercisePlayer: React.FC<ExercisePlayerProps> = ({
               onComplete={handleExerciseComplete}
             />
           );
+        } else if (exercise.name.includes('Path Finding')) {
+          return (
+            <PathFinding
+              gridSize={config.grid_size || 5}
+              obstacles={config.obstacles || 3}
+              onComplete={handleExerciseComplete}
+            />
+          );
+        } else if (exercise.name.includes('Logic Puzzle')) {
+          return (
+            <LogicPuzzle
+              items={config.items || 4}
+              clues={config.clues || 5}
+              onComplete={handleExerciseComplete}
+            />
+          );
         }
-        // Add other problem-solving games here
         return <div className="text-white">Problem-solving game not implemented</div>;
 
       default:

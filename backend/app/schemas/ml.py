@@ -9,13 +9,13 @@ from datetime import datetime
 
 class PredictionRequest(BaseModel):
     """Request schema for creating a prediction."""
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None  # UUID as string
     health_metrics: Optional[Dict[str, float]] = None
     
     class Config:
         json_schema_extra = {
             "example": {
-                "user_id": 1,
+                "user_id": "00000000-0000-0000-0000-000000000001",
                 "health_metrics": {
                     "mmse_score": 24,
                     "age": 72,
@@ -27,20 +27,23 @@ class PredictionRequest(BaseModel):
 
 class PredictionResponse(BaseModel):
     """Response schema for prediction."""
-    id: int
-    user_id: int
-    prediction: Optional[int] = None
-    probability: Optional[float] = None
-    confidence_score: Optional[float] = None
-    confidence_interval_lower: Optional[float] = None
-    confidence_interval_upper: Optional[float] = None
-    risk_level: Optional[str] = None
-    model_version: Optional[str] = None
-    status: str
+    id: str  # UUID as string
+    user_id: str  # UUID as string
+    risk_score: float
+    risk_category: str
+    confidence_interval_lower: float
+    confidence_interval_upper: float
+    feature_importance: Dict[str, float]
+    forecast_six_month: Optional[float] = None
+    forecast_twelve_month: Optional[float] = None
+    forecast_twenty_four_month: Optional[float] = None
+    recommendations: List[str]
+    model_version: str
+    model_type: str
+    input_features: Dict[str, Any]
+    prediction_date: datetime
     created_at: datetime
-    completed_at: Optional[datetime] = None
-    metadata: Optional[Dict[str, Any]] = None
-    message: Optional[str] = None
+    updated_at: datetime
     
     class Config:
         from_attributes = True
@@ -56,7 +59,7 @@ class PredictionListResponse(BaseModel):
 
 class ExplanationResponse(BaseModel):
     """Response schema for prediction explanation."""
-    prediction_id: int
+    prediction_id: str  # UUID as string
     top_features: List[Dict[str, Any]]
     positive_contributors: List[Dict[str, float]]
     negative_contributors: List[Dict[str, float]]
@@ -66,7 +69,7 @@ class ExplanationResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "prediction_id": 1,
+                "prediction_id": "00000000-0000-0000-0000-000000000001",
                 "top_features": [
                     {"feature": "mmse_score", "shap_value": -0.15}
                 ],
@@ -83,14 +86,14 @@ class ExplanationResponse(BaseModel):
 
 class ForecastRequest(BaseModel):
     """Request schema for progression forecast."""
-    user_id: Optional[int] = None
+    user_id: Optional[str] = None  # UUID as string
     current_metrics: Dict[str, float]
     forecast_months: Optional[List[int]] = Field(default=[6, 12, 24])
     
     class Config:
         json_schema_extra = {
             "example": {
-                "user_id": 1,
+                "user_id": "00000000-0000-0000-0000-000000000001",
                 "current_metrics": {
                     "mmse_score": 24,
                     "moca_score": 22,
@@ -103,7 +106,7 @@ class ForecastRequest(BaseModel):
 
 class ForecastResponse(BaseModel):
     """Response schema for progression forecast."""
-    user_id: int
+    user_id: str  # UUID as string
     forecasts: Dict[str, Any]
     progression_rates: Dict[str, float]
     confidence_level: float
@@ -112,7 +115,7 @@ class ForecastResponse(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "user_id": 1,
+                "user_id": "00000000-0000-0000-0000-000000000001",
                 "forecasts": {
                     "6_months": {
                         "metrics": {"mmse_score": 23.5},

@@ -172,7 +172,7 @@ export default function ProgressionForecast({ userId, currentMetrics }: Progress
     try {
       const userIdNum = typeof effectiveUserId === 'string' ? parseInt(effectiveUserId) : effectiveUserId;
       const data = await mlService.getForecast({
-        user_id: userIdNum,
+        user_id: String(userIdNum),
         current_metrics: currentMetrics,
         forecast_months: [6, 12, 24],
       });

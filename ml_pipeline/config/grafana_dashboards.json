@@ -1,0 +1,301 @@
+{
+  "dashboards": [
+    {
+      "name": "ML Pipeline Overview",
+      "uid": "ml-pipeline-overview",
+      "description": "High-level overview of ML pipeline health and performance",
+      "panels": [
+        {
+          "title": "Data Ingestion Rate",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_data_ingestion_total[5m])",
+              "legendFormat": "{{dataset}} - {{source}}"
+            }
+          ]
+        },
+        {
+          "title": "Training Operations",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(ml_pipeline_training_total)",
+              "legendFormat": "Total Trainings"
+            }
+          ]
+        },
+        {
+          "title": "Model Performance (AUC-ROC)",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_model_performance{metric=\"roc_auc\"}",
+              "legendFormat": "{{model_name}}"
+            }
+          ]
+        },
+        {
+          "title": "CPU Usage",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "ml_pipeline_cpu_usage_percent"
+            }
+          ],
+          "thresholds": [
+            {"value": 0, "color": "green"},
+            {"value": 70, "color": "yellow"},
+            {"value": 90, "color": "red"}
+          ]
+        },
+        {
+          "title": "Memory Usage",
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "ml_pipeline_memory_usage_percent"
+            }
+          ],
+          "thresholds": [
+            {"value": 0, "color": "green"},
+            {"value": 70, "color": "yellow"},
+            {"value": 90, "color": "red"}
+          ]
+        },
+        {
+          "title": "Active Alerts",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(ml_pipeline_active_alerts)",
+              "legendFormat": "Total Active Alerts"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Data Ingestion Dashboard",
+      "uid": "ml-pipeline-data-ingestion",
+      "description": "Detailed metrics for data ingestion operations",
+      "panels": [
+        {
+          "title": "Ingestion Duration by Dataset",
+          "type": "heatmap",
+          "targets": [
+            {
+              "expr": "ml_pipeline_data_ingestion_duration_seconds",
+              "legendFormat": "{{dataset}}"
+            }
+          ]
+        },
+        {
+          "title": "Records Ingested",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_data_ingestion_records_total[5m])",
+              "legendFormat": "{{dataset}} - {{source}}"
+            }
+          ]
+        },
+        {
+          "title": "Ingestion Success Rate",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_data_ingestion_total{status=\"success\"}[5m]) / rate(ml_pipeline_data_ingestion_total[5m])",
+              "legendFormat": "{{dataset}}"
+            }
+          ]
+        },
+        {
+          "title": "Data Quality Completeness",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_data_quality_completeness",
+              "legendFormat": "{{dataset}} - {{column}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Training Dashboard",
+      "uid": "ml-pipeline-training",
+      "description": "Model training metrics and performance",
+      "panels": [
+        {
+          "title": "Training Duration",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_training_duration_seconds",
+              "legendFormat": "{{model_name}} - {{model_type}}"
+            }
+          ]
+        },
+        {
+          "title": "Model Performance Metrics",
+          "type": "table",
+          "targets": [
+            {
+              "expr": "ml_pipeline_model_performance",
+              "format": "table"
+            }
+          ]
+        },
+        {
+          "title": "Training Success Rate",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(rate(ml_pipeline_training_total{status=\"success\"}[1h])) / sum(rate(ml_pipeline_training_total[1h]))",
+              "legendFormat": "Success Rate"
+            }
+          ]
+        },
+        {
+          "title": "Feature Extraction Time",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_feature_extraction_duration_seconds",
+              "legendFormat": "{{dataset}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Data Drift Dashboard",
+      "uid": "ml-pipeline-drift",
+      "description": "Data drift detection and monitoring",
+      "panels": [
+        {
+          "title": "PSI by Feature",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_data_drift_psi",
+              "legendFormat": "{{feature}}"
+            }
+          ],
+          "thresholds": [
+            {"value": 0.2, "color": "red", "label": "Drift Threshold"}
+          ]
+        },
+        {
+          "title": "Drift Detections",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_data_drift_detected_total[1h])",
+              "legendFormat": "{{feature}}"
+            }
+          ]
+        },
+        {
+          "title": "Features with Drift",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "count(ml_pipeline_data_drift_psi > 0.2)",
+              "legendFormat": "Drifted Features"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Resource Monitoring Dashboard",
+      "uid": "ml-pipeline-resources",
+      "description": "System resource utilization",
+      "panels": [
+        {
+          "title": "CPU Usage Over Time",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_cpu_usage_percent",
+              "legendFormat": "CPU %"
+            }
+          ]
+        },
+        {
+          "title": "Memory Usage Over Time",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_memory_usage_percent",
+              "legendFormat": "Memory %"
+            },
+            {
+              "expr": "ml_pipeline_memory_used_mb",
+              "legendFormat": "Memory MB"
+            }
+          ]
+        },
+        {
+          "title": "Disk Space",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "ml_pipeline_disk_free_gb",
+              "legendFormat": "Free GB"
+            }
+          ]
+        },
+        {
+          "title": "Processing Errors",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_processing_errors_total[5m])",
+              "legendFormat": "{{operation}} - {{error_type}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alerts Dashboard",
+      "uid": "ml-pipeline-alerts",
+      "description": "Alert monitoring and history",
+      "panels": [
+        {
+          "title": "Alerts by Severity",
+          "type": "piechart",
+          "targets": [
+            {
+              "expr": "sum by (severity) (ml_pipeline_active_alerts)",
+              "legendFormat": "{{severity}}"
+            }
+          ]
+        },
+        {
+          "title": "Alert Rate",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(ml_pipeline_alerts_total[5m])",
+              "legendFormat": "{{alert_type}} - {{severity}}"
+            }
+          ]
+        },
+        {
+          "title": "Recent Alerts",
+          "type": "table",
+          "targets": [
+            {
+              "expr": "ml_pipeline_alerts_total",
+              "format": "table"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

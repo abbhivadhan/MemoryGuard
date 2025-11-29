@@ -247,7 +247,7 @@ const ClinicalNotes: React.FC<ClinicalNotesProps> = ({ patientId }) => {
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="text-lg font-semibold text-white">{note.title}</h4>
                     {note.is_private && (
-                      <Lock className="w-4 h-4 text-gray-400" title="Private note" />
+                      <Lock className="w-4 h-4 text-gray-400" />
                     )}
                   </div>
                   <div className="flex items-center gap-3 text-sm text-gray-400">

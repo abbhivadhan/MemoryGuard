@@ -32,15 +32,17 @@ class StructuredFormatter(logging.Formatter):
 def setup_logging(
     log_level: str = "INFO",
     log_file: Optional[Path] = None,
-    enable_console: bool = True
+    enable_console: bool = True,
+    retention_days: int = 90
 ) -> logging.Logger:
     """
-    Set up logging configuration
+    Set up logging configuration with log retention
     
     Args:
         log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
         log_file: Path to log file (optional)
         enable_console: Whether to enable console logging
+        retention_days: Number of days to retain logs (default: 90)
         
     Returns:
         Configured logger instance
@@ -65,15 +67,16 @@ def setup_logging(
         console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
     
-    # File handler
+    # File handler with time-based rotation
     if log_file:
         log_file.parent.mkdir(parents=True, exist_ok=True)
         
-        # Rotating file handler (max 10MB per file, keep 5 backups)
-        file_handler = RotatingFileHandler(
+        # Time-based rotating file handler (daily rotation, keep based on retention_days)
+        file_handler = TimedRotatingFileHandler(
             log_file,
-            maxBytes=10 * 1024 * 1024,  # 10MB
-            backupCount=5
+            when='midnight',
+            interval=1,
+            backupCount=retention_days
         )
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
@@ -116,7 +119,8 @@ def setup_audit_logging() -> logging.Logger:
 main_logger = setup_logging(
     log_level="INFO",
     log_file=settings.LOGS_PATH / "ml_pipeline.log",
-    enable_console=True
+    enable_console=True,
+    retention_days=settings.LOG_RETENTION_DAYS
 )
 
 audit_logger = setup_audit_logging()

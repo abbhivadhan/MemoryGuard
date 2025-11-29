@@ -10,7 +10,7 @@ interface HomeLocation {
 
 const SafeReturnHome: React.FC = () => {
   const [homeLocation, setHomeLocation] = useState<HomeLocation | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
+  const [, setCurrentLocation] = useState<LocationData | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);

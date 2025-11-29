@@ -3,7 +3,7 @@
  * Handles DICOM file upload and displays processing status
  */
 import React, { useState, useCallback } from 'react';
-import { Upload, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import {
   uploadImagingFile,
   pollImagingStatus,
@@ -143,63 +143,63 @@ const ImagingUpload: React.FC<ImagingUploadProps> = ({
 
       {/* Uploading Status */}
       {uploading && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <Loader className="w-12 h-12 mx-auto mb-4 text-blue-600 animate-spin" />
-          <h3 className="text-lg font-semibold mb-2">Uploading...</h3>
-          <p className="text-gray-600">Encrypting and uploading your imaging file</p>
+        <div className="bg-blue-100 border-2 border-blue-400 rounded-lg p-6 text-center">
+          <Loader className="w-12 h-12 mx-auto mb-4 text-blue-700 animate-spin" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Uploading...</h3>
+          <p className="text-gray-800">Encrypting and uploading your imaging file</p>
         </div>
       )}
 
       {/* Processing Status */}
       {processing && processingStatus && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
+        <div className="bg-purple-100 border-2 border-purple-400 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Loader className="w-6 h-6 text-purple-600 animate-spin" />
+              <Loader className="w-6 h-6 text-purple-700 animate-spin" />
               <div>
-                <h3 className="text-lg font-semibold">Processing MRI Data</h3>
-                <p className="text-sm text-gray-600">{processingStatus.message}</p>
+                <h3 className="text-lg font-semibold text-gray-900">Processing MRI Data</h3>
+                <p className="text-sm text-gray-800">{processingStatus.message}</p>
               </div>
             </div>
-            <span className="text-2xl font-bold text-purple-600">
+            <span className="text-2xl font-bold text-purple-700">
               {processingStatus.progress}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-300 rounded-full h-2">
             <div
-              className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+              className="bg-purple-700 h-2 rounded-full transition-all duration-500"
               style={{ width: `${processingStatus.progress}%` }}
             ></div>
           </div>
-          <div className="mt-4 text-sm text-gray-600">
+          <div className="mt-4 text-sm text-gray-800">
             <ul className="space-y-1">
               <li className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                Parsing DICOM metadata
+                <CheckCircle className="w-4 h-4 text-green-700" />
+                <span className="text-gray-900">Parsing DICOM metadata</span>
               </li>
               <li className="flex items-center gap-2">
                 {processingStatus.progress && processingStatus.progress > 30 ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-green-700" />
                 ) : (
-                  <Loader className="w-4 h-4 text-gray-400 animate-spin" />
+                  <Loader className="w-4 h-4 text-gray-600 animate-spin" />
                 )}
-                Extracting volumetric measurements
+                <span className="text-gray-900">Extracting volumetric measurements</span>
               </li>
               <li className="flex items-center gap-2">
                 {processingStatus.progress && processingStatus.progress > 60 ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-green-700" />
                 ) : (
-                  <Loader className="w-4 h-4 text-gray-400 animate-spin" />
+                  <Loader className="w-4 h-4 text-gray-600 animate-spin" />
                 )}
-                Detecting atrophy patterns
+                <span className="text-gray-900">Detecting atrophy patterns</span>
               </li>
               <li className="flex items-center gap-2">
                 {processingStatus.progress && processingStatus.progress > 90 ? (
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-green-700" />
                 ) : (
-                  <Loader className="w-4 h-4 text-gray-400 animate-spin" />
+                  <Loader className="w-4 h-4 text-gray-600 animate-spin" />
                 )}
-                Generating ML features
+                <span className="text-gray-900">Generating ML features</span>
               </li>
             </ul>
           </div>

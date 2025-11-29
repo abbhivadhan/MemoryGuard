@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { getMyPatients, PatientSummary } from '../../services/caregiverService';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
-import * as THREE from 'three';
+
 
 interface PatientCardProps {
   patient: PatientSummary;
@@ -195,7 +195,7 @@ const CaregiverDashboard: React.FC = () => {
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
+  const [, setSelectedPatient] = useState<string | null>(null);
 
   useEffect(() => {
     loadPatients();

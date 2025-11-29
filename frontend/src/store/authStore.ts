@@ -7,6 +7,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  isNewUser: boolean;
   
   // Actions
   login: (googleToken: string) => Promise<void>;
@@ -18,6 +19,7 @@ interface AuthState {
   fetchCurrentUser: () => Promise<void>;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
+  clearNewUserFlag: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -27,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      isNewUser: false,
 
       login: async (googleToken: string) => {
         set({ isLoading: true, error: null });
@@ -42,6 +45,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            isNewUser: response.is_new_user || false,
           });
         } catch (error: any) {
           const errorMessage = error.response?.data?.detail || 'Authentication failed';
@@ -50,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             error: errorMessage,
+            isNewUser: false,
           });
           throw error;
         }
@@ -69,6 +74,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            isNewUser: response.is_new_user || false,
           });
         } catch (error: any) {
           const errorMessage = error.response?.data?.detail || 'Login failed';
@@ -77,6 +83,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             error: errorMessage,
+            isNewUser: false,
           });
           throw error;
         }
@@ -96,6 +103,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
             error: null,
+            isNewUser: response.is_new_user || false,
           });
         } catch (error: any) {
           const errorMessage = error.response?.data?.detail || 'Registration failed';
@@ -104,6 +112,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
             error: errorMessage,
+            isNewUser: false,
           });
           throw error;
         }
@@ -195,12 +204,17 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },
+
+      clearNewUserFlag: () => {
+        set({ isNewUser: false });
+      },
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        // Don't persist isNewUser - it should only be true on first login
       }),
     }
   )

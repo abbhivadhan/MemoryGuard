@@ -1,0 +1,29 @@
+{
+  "timestamp": "2025-11-26T19:04:55.796582",
+  "dataset_name": "test_data",
+  "model_name": "test_model",
+  "metrics": {
+    "accuracy": 0.85,
+    "balanced_accuracy": 0.8482286634460547,
+    "precision": 0.8498989898989899,
+    "recall": 0.85,
+    "f1_score": 0.8498638975703195,
+    "n_samples": 100
+  },
+  "baseline_comparison": {
+    "accuracy": {
+      "baseline": 0.85,
+      "current": 0.85,
+      "absolute_change": 0.0,
+      "relative_change": 0.0,
+      "degraded": false
+    },
+    "f1_score": {
+      "baseline": 0.83,
+      "current": 0.8498638975703195,
+      "absolute_change": 0.01986389757031959,
+      "relative_change": 0.02393240671122842,
+      "degraded": false
+    }
+  }
+}

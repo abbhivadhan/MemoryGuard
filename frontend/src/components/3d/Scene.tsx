@@ -67,7 +67,7 @@ export default function Scene({
         // Disable stencil buffer on mobile for better performance
         stencil: !capabilities.isMobile,
       }}
-      dpr={settings.dpr}
+      dpr={settings.dpr as [number, number]}
       style={{ background: 'transparent' }}
       // Reduce frame rate on low-end devices
       frameloop={capabilities.isLowEnd ? 'demand' : 'always'}
@@ -95,7 +95,7 @@ export default function Scene({
           allowSleep={true}
           broadphase="SAP" // Sweep and Prune for better performance
           // Reduce physics update rate on low-end devices
-          step={capabilities.isLowEnd ? 1/30 : 1/60}
+          stepSize={capabilities.isLowEnd ? 1/30 : 1/60}
         >
           {children}
         </Physics>

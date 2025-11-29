@@ -67,7 +67,7 @@ const MedicationLogEditor: React.FC<MedicationLogEditorProps> = ({ patientId }) 
     }
   };
 
-  const handleDeleteLog = async (med: Medication, index: number) => {
+  const handleDeleteLog = async (_med: Medication, _index: number) => {
     if (!window.confirm('Are you sure you want to delete this log entry?')) return;
 
     try {

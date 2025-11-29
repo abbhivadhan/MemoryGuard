@@ -28,38 +28,66 @@ export function useDashboardStats(userId?: string) {
       }
 
       try {
-        // Fetch latest assessment for cognitive score
-        const assessmentsResponse = await api.get('/assessments', {
-          params: { limit: 1, sort: '-created_at' }
-        });
-        const latestAssessment = assessmentsResponse.data.assessments?.[0];
-        const cognitiveScore = latestAssessment?.total_score || null;
+        let cognitiveScore = null;
+        let riskLevel = null;
+        let activeDays = 0;
+        let goalsCompleted = 0;
+        let goalsTotal = 0;
 
-        // Fetch risk prediction
-        const riskResponse = await api.get('/ml/predict/risk');
-        const riskLevel = riskResponse.data.risk_category || null;
+        // Fetch latest assessment for cognitive score
+        try {
+          const assessmentsResponse = await api.get('/assessments', {
+            params: { limit: 1, sort: '-created_at' }
+          });
+          const latestAssessment = assessmentsResponse.data.assessments?.[0];
+          cognitiveScore = latestAssessment?.total_score || null;
+        } catch (err) {
+          console.log('Could not fetch assessments:', err);
+        }
+
+        // Fetch latest prediction for risk level
+        try {
+          const predictionsResponse = await api.get(`/ml/predictions/${userId}`);
+          const predictions = predictionsResponse.data.predictions || [];
+          if (predictions.length > 0) {
+            const latestPrediction = predictions.sort((a: any, b: any) => 
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            )[0];
+            riskLevel = latestPrediction.risk_category || null;
+          }
+        } catch (err) {
+          console.log('Could not fetch predictions:', err);
+        }
 
         // Fetch exercise sessions for active days (last 30 days)
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const exercisesResponse = await api.get('/exercises/sessions', {
-          params: { 
-            start_date: thirtyDaysAgo.toISOString(),
-            limit: 100
-          }
-        });
-        const sessions = exercisesResponse.data.sessions || [];
-        const uniqueDays = new Set(
-          sessions.map((s: any) => new Date(s.created_at).toDateString())
-        );
-        const activeDays = uniqueDays.size;
+        try {
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          const exercisesResponse = await api.get('/exercises/sessions', {
+            params: { 
+              start_date: thirtyDaysAgo.toISOString(),
+              limit: 100
+            }
+          });
+          const sessions = exercisesResponse.data.sessions || [];
+          const uniqueDays = new Set(
+            sessions.map((s: any) => new Date(s.created_at).toDateString())
+          );
+          activeDays = uniqueDays.size;
+        } catch (err) {
+          console.log('Could not fetch exercise sessions:', err);
+        }
 
         // Fetch recommendations for goals
-        const recommendationsResponse = await api.get('/recommendations');
-        const recommendations = recommendationsResponse.data.recommendations || [];
-        const completedRecs = recommendations.filter((r: any) => r.status === 'completed');
-        const goalsCompleted = completedRecs.length;
-        const goalsTotal = recommendations.length;
+        try {
+          const recommendationsResponse = await api.get('/recommendations');
+          const recommendations = recommendationsResponse.data.recommendations || [];
+          const completedRecs = recommendations.filter((r: any) => r.status === 'completed');
+          goalsCompleted = completedRecs.length;
+          goalsTotal = recommendations.length;
+        } catch (err) {
+          console.log('Could not fetch recommendations:', err);
+        }
 
         return {
           cognitiveScore,

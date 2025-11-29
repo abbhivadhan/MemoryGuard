@@ -89,13 +89,15 @@ async def record_performance(
     
     db_performance = ExercisePerformance(
         id=str(uuid.uuid4()),
-        user_id=str(current_user.id),
+        user_id=current_user.id,  # Keep as UUID, schema will convert
         **perf_data
     )
     db.add(db_performance)
     db.commit()
     db.refresh(db_performance)
-    return db_performance
+    
+    # Use schema's from_orm to properly convert UUID to string
+    return ExercisePerformanceResponse.from_orm(db_performance)
 
 
 @router.get("/performances", response_model=List[ExercisePerformanceResponse])

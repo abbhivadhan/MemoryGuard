@@ -40,7 +40,7 @@ export const useTouchGestures = (
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const lastTapRef = useRef<number>(0);
-  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialPinchDistanceRef = useRef<number>(0);
 
   useEffect(() => {

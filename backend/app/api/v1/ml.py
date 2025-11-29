@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+from uuid import UUID
 import logging
 
 from app.api.dependencies import get_current_user, get_db
@@ -78,7 +79,7 @@ async def create_prediction(
 
 @router.get("/predictions/{user_id}", response_model=PredictionListResponse)
 async def get_user_predictions(
-    user_id: int,
+    user_id: UUID,
     skip: int = 0,
     limit: int = 10,
     current_user: User = Depends(get_current_user),
@@ -90,7 +91,7 @@ async def get_user_predictions(
     Returns a paginated list of predictions ordered by creation date.
     """
     # Verify user has permission
-    if user_id != current_user.id and not current_user.is_admin:
+    if user_id != current_user.id:
         raise HTTPException(
             status_code=403,
             detail="Not authorized to view predictions for other users"
@@ -109,15 +110,23 @@ async def get_user_predictions(
         return PredictionListResponse(
             predictions=[
                 PredictionResponse(
-                    id=p.id,
-                    user_id=p.user_id,
-                    prediction=p.prediction,
-                    probability=p.probability,
-                    confidence_score=p.confidence_score,
-                    risk_level=p.risk_level,
-                    status=p.status,
+                    id=str(p.id),
+                    user_id=str(p.user_id),
+                    risk_score=p.risk_score,
+                    risk_category=p.risk_category.value,
+                    confidence_interval_lower=p.confidence_interval_lower,
+                    confidence_interval_upper=p.confidence_interval_upper,
+                    feature_importance=p.feature_importance,
+                    forecast_six_month=p.forecast_six_month,
+                    forecast_twelve_month=p.forecast_twelve_month,
+                    forecast_twenty_four_month=p.forecast_twenty_four_month,
+                    recommendations=p.recommendations,
+                    model_version=p.model_version,
+                    model_type=p.model_type,
+                    input_features=p.input_features,
+                    prediction_date=p.prediction_date,
                     created_at=p.created_at,
-                    completed_at=p.completed_at
+                    updated_at=p.updated_at
                 )
                 for p in predictions
             ],
@@ -133,7 +142,7 @@ async def get_user_predictions(
 
 @router.get("/predictions/{prediction_id}/detail", response_model=PredictionResponse)
 async def get_prediction_detail(
-    prediction_id: int,
+    prediction_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -179,7 +188,7 @@ async def get_prediction_detail(
 
 @router.get("/explain/{prediction_id}", response_model=ExplanationResponse)
 async def explain_prediction(
-    prediction_id: int,
+    prediction_id: UUID,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -196,7 +205,7 @@ async def explain_prediction(
             raise HTTPException(status_code=404, detail="Prediction not found")
         
         # Verify user has permission
-        if prediction.user_id != current_user.id and not current_user.is_admin:
+        if prediction.user_id != current_user.id:
             raise HTTPException(
                 status_code=403,
                 detail="Not authorized to view this explanation"

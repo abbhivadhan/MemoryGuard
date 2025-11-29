@@ -31,11 +31,21 @@ interface MMSEQuestion {
   correctAnswer?: string;
 }
 
-const MMSETest: React.FC<MMSETestProps> = ({ assessmentId, onComplete, onSaveProgress }) => {
+// Helper function to get current season
+const getCurrentSeason = () => {
+  const month = new Date().getMonth();
+  if (month >= 2 && month <= 4) return 'Spring';
+  if (month >= 5 && month <= 7) return 'Summer';
+  if (month >= 8 && month <= 10) return 'Fall';
+  return 'Winter';
+};
+
+const MMSETest: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) => {
   const [currentSection, setCurrentSection] = useState(0);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [textInput, setTextInput] = useState('');
+  const [evaluating, setEvaluating] = useState(false);
   
   // Text-to-speech hook
   const { speak, stop, pause, resume, isSpeaking, isPaused, isSupported } = useTextToSpeech({
@@ -52,9 +62,9 @@ const MMSETest: React.FC<MMSETestProps> = ({ assessmentId, onComplete, onSavePro
       instructions: 'Please answer the following questions about the current date and time.',
       questions: [
         { id: 'orientation_year', text: 'What year is it?', type: 'text-input', correctAnswer: new Date().getFullYear().toString() },
-        { id: 'orientation_season', text: 'What season is it?', type: 'multiple-choice', options: ['Spring', 'Summer', 'Fall', 'Winter'] },
+        { id: 'orientation_season', text: 'What season is it?', type: 'multiple-choice', options: ['Spring', 'Summer', 'Fall', 'Winter'], correctAnswer: getCurrentSeason() },
         { id: 'orientation_date', text: 'What is the date?', type: 'text-input' },
-        { id: 'orientation_day', text: 'What day of the week is it?', type: 'multiple-choice', options: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+        { id: 'orientation_day', text: 'What day of the week is it?', type: 'multiple-choice', options: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], correctAnswer: new Date().toLocaleDateString('en-US', { weekday: 'long' }) },
         { id: 'orientation_month', text: 'What month is it?', type: 'text-input' }
       ]
     },
@@ -169,14 +179,47 @@ const MMSETest: React.FC<MMSETestProps> = ({ assessmentId, onComplete, onSavePro
     setTimeout(handleNext, 500);
   };
 
-  const handleTextSubmit = () => {
+  const handleTextSubmit = async () => {
     if (textInput.trim()) {
-      // Check if answer is correct (case-insensitive)
-      const isCorrect = currentQuestionData.correctAnswer
-        ? textInput.toLowerCase().trim() === currentQuestionData.correctAnswer.toLowerCase()
-        : null;
+      setEvaluating(true);
       
-      handleAnswer(currentQuestionData.id, isCorrect !== null ? (isCorrect ? 'correct' : 'incorrect') : textInput);
+      // Use AI to evaluate answer if there's an expected answer
+      if (currentQuestionData.correctAnswer) {
+        try {
+          const response = await fetch('/api/v1/assessments/evaluate-answer', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              question: currentQuestionData.text,
+              user_answer: textInput,
+              expected_answer: currentQuestionData.correctAnswer,
+              context: currentSectionData.title
+            })
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            handleAnswer(currentQuestionData.id, data.is_correct ? 'correct' : 'incorrect');
+          } else {
+            // Fallback to simple matching
+            const isCorrect = textInput.toLowerCase().trim() === currentQuestionData.correctAnswer.toLowerCase();
+            handleAnswer(currentQuestionData.id, isCorrect ? 'correct' : 'incorrect');
+          }
+        } catch (error) {
+          console.error('Error evaluating answer:', error);
+          // Fallback to simple matching
+          const isCorrect = textInput.toLowerCase().trim() === currentQuestionData.correctAnswer.toLowerCase();
+          handleAnswer(currentQuestionData.id, isCorrect ? 'correct' : 'incorrect');
+        }
+      } else {
+        // No expected answer, just store the response
+        handleAnswer(currentQuestionData.id, textInput);
+      }
+      
+      setEvaluating(false);
       setTimeout(handleNext, 500);
     }
   };
@@ -258,10 +301,17 @@ const MMSETest: React.FC<MMSETestProps> = ({ assessmentId, onComplete, onSavePro
                 />
                 <button
                   onClick={handleTextSubmit}
-                  disabled={!textInput.trim()}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-3 rounded-lg transition-all duration-200"
+                  disabled={!textInput.trim() || evaluating}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
                 >
-                  Submit Answer
+                  {evaluating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Evaluating with AI...
+                    </>
+                  ) : (
+                    'Submit Answer'
+                  )}
                 </button>
               </div>
             )}

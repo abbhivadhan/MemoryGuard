@@ -1,0 +1,28 @@
+{
+  "alert_id": "drift_alert_20251126_190427",
+  "timestamp": "2025-11-26T19:04:27.821912",
+  "dataset_name": "integration_test",
+  "alert_type": "data_drift",
+  "severity": "medium",
+  "drift_detected": true,
+  "retraining_recommended": true,
+  "n_reference_samples": 200,
+  "n_current_samples": 100,
+  "features_with_high_psi": [
+    "feature_1",
+    "feature_2"
+  ],
+  "features_with_ks_drift": [
+    "feature_1",
+    "feature_2"
+  ],
+  "psi_scores": {
+    "feature_1": 5.918105309718735,
+    "feature_2": 2.836964309976854,
+    "feature_3": 0.038367094901640794
+  },
+  "ks_test_results": {
+    "feature_1": {
+      "ks_statistic": 0.83,
+      "p_value": 3.0431682257562375e-47,
+      "drift_detected": 

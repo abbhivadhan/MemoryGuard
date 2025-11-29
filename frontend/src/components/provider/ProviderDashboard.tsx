@@ -324,12 +324,12 @@ const ProviderDashboard: React.FC = () => {
 
         {/* Report Generator Section */}
         <div className="mt-6">
-          <ReportGenerator patientId={patientId} patientName={patient.name} />
+          <ReportGenerator patientId={patientId || ''} patientName={patient.name} />
         </div>
 
         {/* Clinical Notes Section */}
         <div className="mt-6">
-          <ClinicalNotes patientId={patientId} />
+          <ClinicalNotes patientId={patientId || ''} />
         </div>
       </div>
     </div>

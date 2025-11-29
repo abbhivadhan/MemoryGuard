@@ -185,3 +185,206 @@ class HealthCheck:
             'disk_percent': disk.percent,
             'disk_available_gb': disk.free / (1024 ** 3)
         }
+
+
+
+class ResourceMonitor:
+    """Monitor system resource utilization over time"""
+    
+    def __init__(self):
+        self.resource_history: list = []
+        self.max_history_size = 1000
+    
+    def collect_metrics(self) -> Dict[str, float]:
+        """
+        Collect current resource metrics
+        
+        Returns:
+            Dictionary of resource metrics
+        """
+        process = psutil.Process()
+        memory = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        
+        metrics = {
+            'timestamp': time.time(),
+            'cpu_percent': psutil.cpu_percent(interval=0.1),
+            'memory_percent': memory.percent,
+            'memory_used_mb': process.memory_info().rss / 1024 / 1024,
+            'disk_percent': disk.percent,
+            'disk_free_gb': disk.free / (1024 ** 3),
+            'num_threads': process.num_threads(),
+            'num_fds': process.num_fds() if hasattr(process, 'num_fds') else 0
+        }
+        
+        # Add to history
+        self.resource_history.append(metrics)
+        
+        # Trim history if too large
+        if len(self.resource_history) > self.max_history_size:
+            self.resource_history = self.resource_history[-self.max_history_size:]
+        
+        return metrics
+    
+    def get_average_metrics(self, window_seconds: int = 60) -> Dict[str, float]:
+        """
+        Get average metrics over a time window
+        
+        Args:
+            window_seconds: Time window in seconds
+            
+        Returns:
+            Dictionary of average metrics
+        """
+        if not self.resource_history:
+            return {}
+        
+        current_time = time.time()
+        cutoff_time = current_time - window_seconds
+        
+        # Filter to window
+        recent_metrics = [
+            m for m in self.resource_history 
+            if m['timestamp'] >= cutoff_time
+        ]
+        
+        if not recent_metrics:
+            return {}
+        
+        # Calculate averages
+        avg_metrics = {}
+        for key in recent_metrics[0].keys():
+            if key != 'timestamp':
+                values = [m[key] for m in recent_metrics]
+                avg_metrics[f'avg_{key}'] = sum(values) / len(values)
+                avg_metrics[f'max_{key}'] = max(values)
+                avg_metrics[f'min_{key}'] = min(values)
+        
+        return avg_metrics
+    
+    def check_resource_thresholds(self) -> Dict[str, bool]:
+        """
+        Check if resource usage exceeds thresholds
+        
+        Returns:
+            Dictionary of threshold violations
+        """
+        metrics = self.collect_metrics()
+        
+        violations = {
+            'high_cpu': metrics['cpu_percent'] > 90,
+            'high_memory': metrics['memory_percent'] > 90,
+            'low_disk': metrics['disk_free_gb'] < 10,
+            'high_threads': metrics['num_threads'] > 100
+        }
+        
+        # Log warnings
+        for violation, is_violated in violations.items():
+            if is_violated:
+                main_logger.warning(
+                    f"Resource threshold exceeded: {violation}",
+                    extra={'operation': 'resource_monitoring', 'user_id': 'system'}
+                )
+        
+        return violations
+
+
+class ProcessingTimeTracker:
+    """Track processing times for different operations"""
+    
+    def __init__(self):
+        self.operation_times: Dict[str, list] = {}
+    
+    def record_time(self, operation: str, duration_seconds: float):
+        """
+        Record processing time for an operation
+        
+        Args:
+            operation: Operation name
+            duration_seconds: Duration in seconds
+        """
+        if operation not in self.operation_times:
+            self.operation_times[operation] = []
+        
+        self.operation_times[operation].append({
+            'duration': duration_seconds,
+            'timestamp': time.time()
+        })
+        
+        # Keep only last 100 entries per operation
+        if len(self.operation_times[operation]) > 100:
+            self.operation_times[operation] = self.operation_times[operation][-100:]
+    
+    def get_statistics(self, operation: str) -> Dict[str, float]:
+        """
+        Get statistics for an operation
+        
+        Args:
+            operation: Operation name
+            
+        Returns:
+            Dictionary of statistics
+        """
+        if operation not in self.operation_times or not self.operation_times[operation]:
+            return {}
+        
+        durations = [entry['duration'] for entry in self.operation_times[operation]]
+        
+        return {
+            'count': len(durations),
+            'mean': sum(durations) / len(durations),
+            'min': min(durations),
+            'max': max(durations),
+            'median': sorted(durations)[len(durations) // 2]
+        }
+    
+    def get_all_statistics(self) -> Dict[str, Dict[str, float]]:
+        """
+        Get statistics for all operations
+        
+        Returns:
+            Dictionary mapping operation names to statistics
+        """
+        return {
+            operation: self.get_statistics(operation)
+            for operation in self.operation_times.keys()
+        }
+
+
+# Global monitoring instances
+resource_monitor = ResourceMonitor()
+processing_time_tracker = ProcessingTimeTracker()
+
+
+def monitor_processing_time(operation_name: str):
+    """
+    Decorator to monitor and record processing time
+    
+    Args:
+        operation_name: Name of the operation
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            start_time = time.time()
+            try:
+                result = func(*args, **kwargs)
+                duration = time.time() - start_time
+                
+                # Record processing time
+                processing_time_tracker.record_time(operation_name, duration)
+                
+                # Log
+                main_logger.info(
+                    f"{operation_name} completed in {duration:.2f}s",
+                    extra={'operation': operation_name, 'user_id': 'system'}
+                )
+                
+                return result
+            except Exception as e:
+                duration = time.time() - start_time
+                processing_time_tracker.record_time(f"{operation_name}_failed", duration)
+                raise
+        
+        return wrapper
+    return decorator

@@ -10,6 +10,7 @@ const FaceRecognition: React.FC = () => {
   const [recognizing, setRecognizing] = useState(false);
   const [recognitionResult, setRecognitionResult] = useState<FaceRecognitionMatch | null>(null);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,6 +32,7 @@ const FaceRecognition: React.FC = () => {
 
   const loadModels = async () => {
     try {
+      console.log('Loading face recognition models...');
       // Load face-api.js models from CDN
       const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
       await Promise.all([
@@ -38,9 +40,16 @@ const FaceRecognition: React.FC = () => {
         faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
       ]);
+      console.log('Face recognition models loaded successfully!');
       setModelsLoaded(true);
+      setShowSuccessBanner(true);
+      // Auto-hide success banner after 5 seconds
+      setTimeout(() => {
+        setShowSuccessBanner(false);
+      }, 5000);
     } catch (error) {
       console.error('Failed to load face recognition models:', error);
+      alert('Failed to load face recognition models. Please refresh the page and try again.');
     }
   };
 
@@ -59,7 +68,11 @@ const FaceRecognition: React.FC = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { 
+          width: 640, 
+          height: 480,
+          facingMode: 'user' // Use front camera and enable mirroring
+        },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -82,24 +95,32 @@ const FaceRecognition: React.FC = () => {
     imageElement: HTMLImageElement | HTMLVideoElement
   ): Promise<number[] | null> => {
     if (!modelsLoaded) {
-      alert('Face recognition models are still loading. Please wait.');
+      console.error('Models not loaded yet');
       return null;
     }
 
     try {
+      console.log('Starting face detection...');
+      
+      // Try with different detector options for better detection
       const detection = await faceapi
-        .detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions({
+          inputSize: 416,
+          scoreThreshold: 0.3
+        }))
         .withFaceLandmarks()
         .withFaceDescriptor();
 
       if (!detection) {
-        alert('No face detected. Please try again with a clear face photo.');
+        console.error('No face detected in image');
         return null;
       }
 
+      console.log('Face detected with score:', detection.detection.score);
       return Array.from(detection.descriptor);
     } catch (error) {
       console.error('Failed to extract face embedding:', error);
+      alert('Error processing image: ' + (error instanceof Error ? error.message : 'Unknown error'));
       return null;
     }
   };
@@ -125,16 +146,30 @@ const FaceRecognition: React.FC = () => {
     img.src = preview;
 
     img.onload = async () => {
+      console.log('Image loaded, extracting face embedding...');
       const embedding = await extractFaceEmbedding(img);
       if (embedding) {
+        console.log('Face detected successfully!');
         setFaceEmbedding(embedding);
       } else {
+        console.error('No face detected in image');
+        alert('No face detected. Please ensure:\n- The photo shows a clear, front-facing face\n- Good lighting\n- Face is not too small or too large\n- Only one face in the photo');
         setSelectedFile(null);
         setPreviewUrl(null);
         setFaceEmbedding(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+      }
+    };
+
+    img.onerror = () => {
+      console.error('Failed to load image');
+      alert('Failed to load image. Please try a different photo.');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
       }
     };
   };
@@ -152,6 +187,7 @@ const FaceRecognition: React.FC = () => {
 
     try {
       // Convert image to base64 data URL for persistent storage
+      // Using full quality for better face recognition accuracy
       const reader = new FileReader();
       reader.onloadend = async () => {
         const photoUrl = reader.result as string;
@@ -199,8 +235,11 @@ const FaceRecognition: React.FC = () => {
         if (result.best_match) {
           setRecognitionResult(result.best_match);
         } else {
-          alert('No matching face found in your profiles.');
+          // Show "Can't identify" message when model is not confident
+          alert("Can't identify the person. The face doesn't match any saved profiles with sufficient confidence.");
         }
+      } else {
+        alert('No face detected in the camera. Please ensure your face is clearly visible.');
       }
     } catch (error) {
       console.error('Failed to recognize face:', error);
@@ -245,9 +284,30 @@ const FaceRecognition: React.FC = () => {
 
       {!modelsLoaded && (
         <div className="backdrop-blur-xl bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
-          <p className="text-yellow-300">Loading face recognition models...</p>
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
+            <p className="text-yellow-300">Loading face recognition models... Please wait before uploading photos.</p>
+          </div>
         </div>
       )}
+
+      <AnimatePresence>
+        {showSuccessBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="backdrop-blur-xl bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-green-300">Face recognition models loaded successfully! You can now upload photos.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Add profile form */}
       <AnimatePresence>
@@ -365,7 +425,8 @@ const FaceRecognition: React.FC = () => {
               ref={videoRef}
               autoPlay
               playsInline
-              className="w-full rounded-lg bg-gray-900 border border-white/10"
+              className="w-full rounded-lg bg-gray-900 border border-white/10 scale-x-[-1]"
+              style={{ transform: 'scaleX(-1)' }}
             />
             <canvas ref={canvasRef} className="hidden" />
 
@@ -438,6 +499,10 @@ const FaceRecognition: React.FC = () => {
               <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-lg p-6 h-full flex items-center justify-center">
                 <p className="text-gray-400 text-center">
                   Recognition result will appear here
+                  <br />
+                  <span className="text-sm text-gray-500 mt-2 block">
+                    If no match is found, you'll see "Can't identify the person"
+                  </span>
                 </p>
               </div>
             )}

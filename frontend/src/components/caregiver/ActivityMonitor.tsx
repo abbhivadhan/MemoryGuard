@@ -6,7 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
-import * as THREE from 'three';
+
 
 interface Activity {
   id: string;
@@ -88,7 +88,7 @@ const ActivityMonitor: React.FC<ActivityMonitorProps> = ({ patientId }) => {
     loadActivityStatus();
     
     // Auto-refresh every 30 seconds
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     if (autoRefresh) {
       interval = setInterval(loadActivityStatus, 30000);
     }

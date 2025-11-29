@@ -5,7 +5,7 @@
 
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useSyncStatus } from '../hooks/useSyncStatus';
-import { WifiOff, Wifi, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react';
+import { WifiOff, Wifi, RefreshCw, AlertCircle } from 'lucide-react';
 import { syncService } from '../services/syncService';
 
 export default function OfflineIndicator() {

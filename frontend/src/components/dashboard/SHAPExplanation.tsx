@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text, Box } from '@react-three/drei';
 import { motion } from 'framer-motion';
-import * as THREE from 'three';
+
 import { mlService, ExplanationResponse } from '../../services/mlService';
 
 interface SHAPExplanationProps {

@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     DATA_ENCRYPTION_KEY: Optional[str] = None
     AUDIT_LOG_PATH: str = "./logs/audit.log"
     INPUT_VALIDATION_ENABLED: bool = True
-    MAX_JSON_PAYLOAD_BYTES: int = 512 * 1024  # 512KB
+    MAX_JSON_PAYLOAD_BYTES: int = 5 * 1024 * 1024  # 5MB (for base64 images)
     MAX_INPUT_STRING_LENGTH: int = 10_000
     CONTENT_SECURITY_POLICY: str = (
         "default-src 'self'; "

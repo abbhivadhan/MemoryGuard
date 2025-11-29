@@ -22,6 +22,16 @@ class ImagingStatus(str, enum.Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    
+    @classmethod
+    def _missing_(cls, value):
+        """Handle case-insensitive enum lookup"""
+        if isinstance(value, str):
+            value = value.lower()
+            for member in cls:
+                if member.value == value:
+                    return member
+        return None
 
 
 class MedicalImaging(BaseModel):
@@ -35,7 +45,7 @@ class MedicalImaging(BaseModel):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     
     # Imaging metadata
-    modality = Column(SQLEnum(ImagingModality), nullable=False)
+    modality = Column(SQLEnum(ImagingModality, values_callable=lambda x: [e.value for e in x]), nullable=False)
     study_date = Column(String, nullable=True)
     study_description = Column(String, nullable=True)
     series_description = Column(String, nullable=True)
@@ -45,7 +55,7 @@ class MedicalImaging(BaseModel):
     file_size = Column(Float, nullable=False)  # Size in MB
     
     # Processing status
-    status = Column(SQLEnum(ImagingStatus), default=ImagingStatus.UPLOADED, nullable=False)
+    status = Column(SQLEnum(ImagingStatus, values_callable=lambda x: [e.value for e in x]), default=ImagingStatus.UPLOADED, nullable=False)
     processing_error = Column(String, nullable=True)
     
     # Volumetric measurements (in mm³)

@@ -38,7 +38,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     [0.5, 1, 1, 1, 0.5]
   );
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     const { offset, velocity } = info;
 
     // Check horizontal swipe

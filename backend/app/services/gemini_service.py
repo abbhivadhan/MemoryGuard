@@ -347,6 +347,12 @@ Help the user understand what this means for their health."""
             logger.error(f"Error explaining prediction: {e}")
             return "Explanation unavailable. Please consult your healthcare provider."
     
+    async def generate_content(self, prompt: str, system_instruction: Optional[str] = None) -> str:
+        """Async wrapper for content generation"""
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._generate_content, prompt, system_instruction)
+    
     def log_interaction(
         self,
         interaction_type: str,

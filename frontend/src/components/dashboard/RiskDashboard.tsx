@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import RiskAssessment from './RiskAssessment';
-import SHAPExplanation from './SHAPExplanation';
-import RiskExplanation from './RiskExplanation';
-import ProgressionForecast from './ProgressionForecast';
+
 import { mlService, PredictionResponse } from '../../services/mlService';
 import { useAuthStore } from '../../store/authStore';
 
@@ -16,7 +14,7 @@ export default function RiskDashboard({ userId }: RiskDashboardProps) {
   const [prediction, setPrediction] = useState<PredictionResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentMetrics, setCurrentMetrics] = useState<Record<string, number> | null>(null);
+  const [, setCurrentMetrics] = useState<Record<string, number> | null>(null);
 
   const effectiveUserId = userId || user?.id;
 
@@ -27,24 +25,31 @@ export default function RiskDashboard({ userId }: RiskDashboardProps) {
   }, [effectiveUserId]);
 
   const loadPrediction = async () => {
-    if (!effectiveUserId) return;
+    if (!effectiveUserId) {
+      console.log('No user ID available');
+      setLoading(false);
+      return;
+    }
 
+    console.log('Loading prediction for user:', effectiveUserId);
     setLoading(true);
     setError(null);
 
     try {
-      const userIdNum = typeof effectiveUserId === 'string' ? parseInt(effectiveUserId) : effectiveUserId;
-      const latestPrediction = await mlService.getLatestPrediction(userIdNum);
+      const latestPrediction = await mlService.getLatestPrediction(effectiveUserId);
+      console.log('Loaded prediction:', latestPrediction);
       setPrediction(latestPrediction);
 
-      // Extract current metrics from prediction metadata if available
-      if (latestPrediction?.metadata?.input_features) {
-        setCurrentMetrics(latestPrediction.metadata.input_features);
+      // Extract current metrics from prediction input_features if available
+      if (latestPrediction?.input_features) {
+        setCurrentMetrics(latestPrediction.input_features);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading prediction:', err);
-      setError('Failed to load risk assessment data');
+      console.error('Error details:', err.response?.data || err.message);
+      setError(err.response?.data?.detail || 'Failed to load risk assessment data');
     } finally {
+      console.log('Finished loading prediction');
       setLoading(false);
     }
   };
@@ -170,16 +175,16 @@ export default function RiskDashboard({ userId }: RiskDashboardProps) {
         {/* Risk Assessment Overview */}
         <RiskAssessment userId={effectiveUserId} prediction={prediction} />
 
-        {/* Plain Language Explanation */}
-        <RiskExplanation predictionId={prediction.id} prediction={prediction} />
+        {/* Plain Language Explanation - Temporarily disabled */}
+        {/* <RiskExplanation predictionId={prediction.id} prediction={prediction} /> */}
 
-        {/* SHAP Feature Importance */}
-        <SHAPExplanation predictionId={prediction.id} />
+        {/* SHAP Feature Importance - Temporarily disabled */}
+        {/* <SHAPExplanation predictionId={prediction.id} /> */}
 
-        {/* Progression Forecast */}
-        {currentMetrics && (
+        {/* Progression Forecast - Temporarily disabled, forecast data is in predictions */}
+        {/* {currentMetrics && (
           <ProgressionForecast userId={effectiveUserId} currentMetrics={currentMetrics} />
-        )}
+        )} */}
 
         {/* Action Items */}
         <motion.div

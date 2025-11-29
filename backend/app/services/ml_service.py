@@ -329,7 +329,7 @@ class MLService:
     
     def get_user_predictions(
         self,
-        user_id: int,
+        user_id,
         skip: int = 0,
         limit: int = 10
     ) -> List[Prediction]:
@@ -337,7 +337,7 @@ class MLService:
         Get predictions for a user.
         
         Args:
-            user_id: User ID
+            user_id: User ID (UUID or int)
             skip: Number of records to skip
             limit: Maximum records to return
             
@@ -350,13 +350,13 @@ class MLService:
             Prediction.created_at.desc()
         ).offset(skip).limit(limit).all()
     
-    def count_user_predictions(self, user_id: int) -> int:
+    def count_user_predictions(self, user_id) -> int:
         """Count total predictions for a user."""
         return self.db.query(Prediction).filter(
             Prediction.user_id == user_id
         ).count()
     
-    def get_prediction_by_id(self, prediction_id: int) -> Optional[Prediction]:
+    def get_prediction_by_id(self, prediction_id) -> Optional[Prediction]:
         """Get prediction by ID."""
         return self.db.query(Prediction).filter(
             Prediction.id == prediction_id

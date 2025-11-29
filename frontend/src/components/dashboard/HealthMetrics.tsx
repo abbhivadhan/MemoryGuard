@@ -5,7 +5,7 @@ import { useHealthMetrics } from '../../hooks/useHealthMetrics';
 import BrainHealthVisualization from './BrainHealthVisualization';
 import BiomarkerChart3D from './BiomarkerChart3D';
 import ProgressionTimeline3D from './ProgressionTimeline3D';
-import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
+
 
 interface MetricCategory {
   type: string;
@@ -34,35 +34,35 @@ const HealthMetrics: React.FC = () => {
         type: 'cognitive',
         title: 'Cognitive Function',
         metrics: [],
-        icon: '🧠',
+        icon: '',
         color: 'from-purple-500 to-pink-500',
       },
       biomarker: {
         type: 'biomarker',
         title: 'Biomarkers',
         metrics: [],
-        icon: '🔬',
+        icon: '',
         color: 'from-blue-500 to-cyan-500',
       },
       imaging: {
         type: 'imaging',
         title: 'Brain Imaging',
         metrics: [],
-        icon: '📊',
+        icon: '',
         color: 'from-green-500 to-emerald-500',
       },
       lifestyle: {
         type: 'lifestyle',
         title: 'Lifestyle Factors',
         metrics: [],
-        icon: '💪',
+        icon: '',
         color: 'from-orange-500 to-yellow-500',
       },
       cardiovascular: {
         type: 'cardiovascular',
         title: 'Cardiovascular Health',
         metrics: [],
-        icon: '❤️',
+        icon: '',
         color: 'from-red-500 to-rose-500',
       },
     };
@@ -97,19 +97,17 @@ const HealthMetrics: React.FC = () => {
 
   if (!data?.metrics || data.metrics.length === 0) {
     return (
-      <div className="bg-gray-800 border border-gray-700 rounded-lg">
-        <EmptyState
-          icon={EmptyStateIcons.NoMetrics}
-          title="No Health Metrics Yet"
-          description="Start tracking your cognitive health by adding your first health metric. Input real data from medical assessments, lab results, or health monitoring devices."
-          action={{
-            label: 'Add Health Metric',
-            onClick: () => {
-              // TODO: Navigate to add metric form or open modal
-              console.log('Add health metric clicked');
-            },
-          }}
-        />
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-12 text-center">
+        <h3 className="text-xl font-semibold mb-3 text-white">No Health Metrics Yet</h3>
+        <p className="text-gray-400 mb-6">
+          Start tracking your cognitive health by adding your first health metric. Input real data from medical assessments, lab results, or health monitoring devices.
+        </p>
+        <button
+          onClick={() => console.log('Add health metric clicked')}
+          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+        >
+          Add Health Metric
+        </button>
       </div>
     );
   }
@@ -181,12 +179,9 @@ const MetricCategoryCard: React.FC<MetricCategoryCardProps> = ({ category }) => 
     <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className={`bg-gradient-to-r ${category.color} p-4`}>
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">{category.icon}</span>
-          <div>
-            <h3 className="text-xl font-bold text-white">{category.title}</h3>
-            <p className="text-white/80 text-sm">{category.metrics.length} metrics</p>
-          </div>
+        <div>
+          <h3 className="text-xl font-bold text-white">{category.title}</h3>
+          <p className="text-white/80 text-sm">{category.metrics.length} metrics</p>
         </div>
       </div>
 

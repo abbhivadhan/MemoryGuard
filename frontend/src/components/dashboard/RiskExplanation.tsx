@@ -20,7 +20,7 @@ const formatFeatureName = (feature: string): string => {
 const getFeatureDescription = (feature: string, value: number, isPositive: boolean): string => {
   const featureLower = feature.toLowerCase();
   const impact = isPositive ? 'increases' : 'decreases';
-  const direction = isPositive ? 'higher' : 'lower';
+
   
   // Common feature descriptions
   const descriptions: Record<string, string> = {
