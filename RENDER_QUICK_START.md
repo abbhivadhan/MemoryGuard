@@ -52,21 +52,27 @@ Deploy your MemoryGuard backend to Render in 15 minutes!
 
 4. Click **"Advanced"** → Add Environment Variables:
 
-   **Quick Copy-Paste Template:**
+   **Minimal Required Template:**
    ```bash
+   # Required
    APP_NAME=MemoryGuard
    ENVIRONMENT=production
    DEBUG=false
    DATABASE_URL=<PASTE_YOUR_INTERNAL_DATABASE_URL>
    REDIS_URL=<PASTE_YOUR_INTERNAL_REDIS_URL>
    JWT_SECRET=<RUN: openssl rand -hex 32>
-   GOOGLE_CLIENT_ID=<YOUR_GOOGLE_CLIENT_ID>
-   GOOGLE_CLIENT_SECRET=<YOUR_GOOGLE_CLIENT_SECRET>
-   GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
    CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
+   
+   # Optional (leave empty if not using)
+   GOOGLE_CLIENT_ID=
+   GOOGLE_CLIENT_SECRET=
+   GEMINI_API_KEY=
    ```
    
-   **⚠️ Important:** Use comma-separated format for `CORS_ORIGINS` (no brackets!)
+   **⚠️ Important Notes:**
+   - Use comma-separated format for `CORS_ORIGINS` (no brackets!)
+   - Google OAuth and Gemini AI are optional - leave empty if not using
+   - Supabase is NOT required - we use Render PostgreSQL
 
    See `backend/.env.production.template` for complete list!
 

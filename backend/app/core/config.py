@@ -155,17 +155,17 @@ class Settings(BaseSettings):
             if self.JWT_SECRET == "your-secret-key-change-in-production":
                 errors.append("JWT_SECRET must be changed in production")
             
-            if not self.SUPABASE_URL:
-                errors.append("SUPABASE_URL is required in production")
+            # Supabase is optional - only validate if DATABASE_URL is not set
+            if not self.DATABASE_URL or self.DATABASE_URL == "postgresql://postgres:postgres@localhost:5432/memoryguard":
+                errors.append("DATABASE_URL must be configured in production")
             
-            if not self.SUPABASE_SERVICE_KEY:
-                errors.append("SUPABASE_SERVICE_KEY is required in production")
+            # Google OAuth is optional for some deployments
+            # if not self.GOOGLE_CLIENT_ID or not self.GOOGLE_CLIENT_SECRET:
+            #     errors.append("Google OAuth credentials are required in production")
             
-            if not self.GOOGLE_CLIENT_ID or not self.GOOGLE_CLIENT_SECRET:
-                errors.append("Google OAuth credentials are required in production")
-            
-            if not self.GEMINI_API_KEY:
-                errors.append("GEMINI_API_KEY is required in production")
+            # Gemini is optional
+            # if not self.GEMINI_API_KEY:
+            #     errors.append("GEMINI_API_KEY is required in production")
             
             if self.DEBUG:
                 errors.append("DEBUG should be False in production")
