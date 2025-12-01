@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
-from typing import Optional, List
+from pydantic import field_validator
+from typing import Optional, List, Union
 from functools import lru_cache
 import os
 
@@ -67,7 +68,19 @@ class Settings(BaseSettings):
     GEMINI_MAX_RETRIES: int = 3
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: Union[List[str], str] = ["http://localhost:3000"]
+    
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from string or list"""
+        if isinstance(v, str):
+            # Handle empty string
+            if not v or v.strip() == '':
+                return ["http://localhost:3000"]
+            # Handle comma-separated string
+            return [origin.strip() for origin in v.split(',') if origin.strip()]
+        return v
     
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
@@ -76,7 +89,17 @@ class Settings(BaseSettings):
     
     # File Upload
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MB
-    ALLOWED_UPLOAD_EXTENSIONS: List[str] = [".dcm", ".nii", ".nii.gz", ".jpg", ".png"]
+    ALLOWED_UPLOAD_EXTENSIONS: Union[List[str], str] = [".dcm", ".nii", ".nii.gz", ".jpg", ".png"]
+    
+    @field_validator('ALLOWED_UPLOAD_EXTENSIONS', mode='before')
+    @classmethod
+    def parse_allowed_extensions(cls, v):
+        """Parse ALLOWED_UPLOAD_EXTENSIONS from string or list"""
+        if isinstance(v, str):
+            if not v or v.strip() == '':
+                return [".dcm", ".nii", ".nii.gz", ".jpg", ".png"]
+            return [ext.strip() for ext in v.split(',') if ext.strip()]
+        return v
     
     # ML Model Settings
     ML_MODEL_PATH: str = "models/"

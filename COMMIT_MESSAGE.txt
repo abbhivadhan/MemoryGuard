@@ -1,0 +1,32 @@
+fix: Handle CORS_ORIGINS as comma-separated string for Render deployment
+
+Fixes Pydantic settings error when deploying to Render where environment
+variables are plain strings, not JSON arrays.
+
+Changes:
+- Added field validators for CORS_ORIGINS and ALLOWED_UPLOAD_EXTENSIONS
+- Accepts comma-separated strings, JSON arrays, or empty values
+- Empty values default to localhost
+- Updated .env.example and .env.production.template with new format
+- Added comprehensive documentation and troubleshooting guides
+
+Files modified:
+- backend/app/core/config.py (validators)
+- backend/.env.example (format docs)
+- backend/.env.production.template (format examples)
+- RENDER_QUICK_START.md (troubleshooting)
+
+New documentation:
+- RENDER_DEPLOYMENT_FIX.md (detailed fix guide)
+- CORS_ORIGINS_FIX.md (technical details)
+- DEPLOYMENT_FIX_SUMMARY.md (complete summary)
+- QUICK_FIX_CORS.md (30-second fix)
+
+Tested formats:
+✓ Empty string → defaults to localhost
+✓ Single URL → single-item list
+✓ Comma-separated → multi-item list
+✓ JSON array → passes through (backward compatible)
+
+Resolves: Render deployment failure with JSONDecodeError
+Platform: Render, Vercel, and similar cloud platforms

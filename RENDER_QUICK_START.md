@@ -63,8 +63,10 @@ Deploy your MemoryGuard backend to Render in 15 minutes!
    GOOGLE_CLIENT_ID=<YOUR_GOOGLE_CLIENT_ID>
    GOOGLE_CLIENT_SECRET=<YOUR_GOOGLE_CLIENT_SECRET>
    GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
-   CORS_ORIGINS=["https://your-app.vercel.app"]
+   CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
    ```
+   
+   **⚠️ Important:** Use comma-separated format for `CORS_ORIGINS` (no brackets!)
 
    See `backend/.env.production.template` for complete list!
 
@@ -117,8 +119,14 @@ Your backend is now live! Test by:
 
 ### CORS Error
 - Add your Vercel URL to `CORS_ORIGINS`
-- Format: `["https://your-app.vercel.app"]`
+- **Format**: `https://your-app.vercel.app,http://localhost:3000` (comma-separated, no brackets!)
 - Redeploy after updating
+
+### JSON Decode Error (CORS_ORIGINS)
+- **Error**: `json.decoder.JSONDecodeError: Expecting value`
+- **Fix**: Use comma-separated format: `https://example.com,http://localhost:3000`
+- **Don't use**: JSON arrays like `["https://example.com"]` in Render
+- See `RENDER_DEPLOYMENT_FIX.md` for details
 
 ### 502 Bad Gateway
 - Check service logs for errors
