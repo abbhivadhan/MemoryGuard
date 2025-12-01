@@ -15,8 +15,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Expose port
+# Make scripts executable
+RUN chmod +x build.sh start.sh 2>/dev/null || true
+
+# Expose port (Render will set PORT env var)
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run migrations and start the application
+CMD alembic upgrade head && gunicorn app.main:app \
+    --workers 4 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --bind 0.0.0.0:${PORT:-8000} \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
