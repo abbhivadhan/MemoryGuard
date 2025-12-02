@@ -58,6 +58,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Database connection error: {e} - continuing in dev mode")
     
+    # Run startup migrations (for Render free tier without shell access)
+    try:
+        from app.core.startup_migrations import run_startup_migrations
+        run_startup_migrations()
+    except Exception as e:
+        logger.warning(f"Startup migrations failed: {e} - continuing anyway")
+    
     # Load ML models on startup - TEMPORARILY DISABLED FOR FASTER STARTUP
     logger.warning("ML model pre-loading disabled for faster startup. Models will load on first use.")
     # try:
@@ -329,3 +336,53 @@ async def root():
         "docs": "/docs",
         "health": "/api/v1/health"
     }
+
+
+@app.get("/migration-status")
+async def migration_status():
+    """Check if critical migrations have been applied"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.connect() as conn:
+            # Check photo_url column type
+            result = conn.execute(text("""
+                SELECT column_name, data_type, character_maximum_length 
+                FROM information_schema.columns 
+                WHERE table_name = 'face_profiles' 
+                AND column_name = 'photo_url'
+            """))
+            
+            column_info = result.fetchone()
+            
+            if not column_info:
+                return {
+                    "status": "pending",
+                    "message": "face_profiles table not created yet",
+                    "photo_url_migration": "not_applicable"
+                }
+            
+            current_type = column_info[1]
+            max_length = column_info[2]
+            
+            if current_type == 'text':
+                return {
+                    "status": "complete",
+                    "message": "All migrations applied successfully",
+                    "photo_url_migration": "complete",
+                    "photo_url_type": "TEXT"
+                }
+            else:
+                return {
+                    "status": "incomplete",
+                    "message": "Migration needed - redeploy to apply",
+                    "photo_url_migration": "needed",
+                    "photo_url_type": f"{current_type}({max_length})"
+                }
+                
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
