@@ -26,6 +26,8 @@ interface Question {
   aiEvaluate?: boolean;
   expectedAnswer?: string | string[];
   helpText?: string;
+  imageUrl?: string;
+  imageAlt?: string;
 }
 
 const MMSETestNew: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) => {
@@ -273,7 +275,9 @@ const MMSETestNew: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) =>
       type: 'choice',
       options: ['Yes, I drew it correctly', 'I tried but it was not quite right', 'No, I could not do it'],
       points: 1,
-      helpText: 'This tests your ability to copy a geometric design'
+      helpText: 'This tests your ability to copy a geometric design',
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Intersecting_pentagons.svg/320px-Intersecting_pentagons.svg.png',
+      imageAlt: 'Two intersecting pentagons'
     }
   ];
 
@@ -346,8 +350,10 @@ const MMSETestNew: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) =>
         const selectedIndex = currentQuestion.options?.indexOf(userInput) ?? -1;
         if (currentQuestion.id === 'three_stage_command') {
           score = selectedIndex === 0 ? 3 : selectedIndex === 1 ? 2 : selectedIndex === 2 ? 1 : 0;
+          isCorrect = score > 0;
         } else if (currentQuestion.id === 'reading_command' || currentQuestion.id === 'copying_design') {
           score = selectedIndex === 0 ? 1 : 0;
+          isCorrect = score > 0;
         } else {
           // Regular choice with AI evaluation
           isCorrect = await evaluateWithAI(currentQuestion, userInput);
@@ -357,7 +363,8 @@ const MMSETestNew: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) =>
 
       const newResponses = {
         ...responses,
-        [currentQuestion.id]: userInput,
+        [currentQuestion.id]: isCorrect || score > 0 ? "correct" : "incorrect",
+        [`${currentQuestion.id}_answer`]: userInput,
         [`${currentQuestion.id}_score`]: score
       };
 
@@ -448,6 +455,20 @@ const MMSETestNew: React.FC<MMSETestProps> = ({ onComplete, onSaveProgress }) =>
             <h2 className="text-2xl font-semibold mb-6 text-center">
               {currentQuestion.question}
             </h2>
+
+            {/* Image Display */}
+            {currentQuestion.imageUrl && (
+              <div className="flex justify-center mb-6">
+                <img 
+                  src={currentQuestion.imageUrl} 
+                  alt={currentQuestion.imageAlt || 'Assessment image'}
+                  className="max-w-md w-full rounded-lg border-2 border-white/20 shadow-lg"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
 
             {/* Help Text */}
             {currentQuestion.helpText && (

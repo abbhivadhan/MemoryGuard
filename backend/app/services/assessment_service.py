@@ -112,9 +112,9 @@ Format: CORRECT|explanation or INCORRECT|explanation"""
         
         # Language (9 points)
         # Naming (2 points)
-        if responses.get("naming_object1") == "correct":
+        if responses.get("naming_pencil") == "correct" or responses.get("naming_object1") == "correct":
             score += 1
-        if responses.get("naming_object2") == "correct":
+        if responses.get("naming_watch") == "correct" or responses.get("naming_object2") == "correct":
             score += 1
         
         # Repetition (1 point)
@@ -122,23 +122,28 @@ Format: CORRECT|explanation or INCORRECT|explanation"""
             score += 1
         
         # Three-stage command (3 points)
-        if responses.get("command_step1") == "correct":
-            score += 1
-        if responses.get("command_step2") == "correct":
-            score += 1
-        if responses.get("command_step3") == "correct":
-            score += 1
+        # Check if using new format with _score suffix
+        if "three_stage_command_score" in responses:
+            score += min(int(responses.get("three_stage_command_score", 0)), 3)
+        else:
+            # Legacy format
+            if responses.get("command_step1") == "correct":
+                score += 1
+            if responses.get("command_step2") == "correct":
+                score += 1
+            if responses.get("command_step3") == "correct":
+                score += 1
         
         # Reading (1 point)
-        if responses.get("reading") == "correct":
+        if responses.get("reading_command") == "correct" or responses.get("reading") == "correct":
             score += 1
         
         # Writing (1 point)
-        if responses.get("writing") == "correct":
+        if responses.get("writing_sentence") == "correct" or responses.get("writing") == "correct":
             score += 1
         
-        # Drawing (1 point)
-        if responses.get("drawing") == "correct":
+        # Drawing/Copying (1 point)
+        if responses.get("copying_design") == "correct" or responses.get("drawing") == "correct":
             score += 1
         
         return score
