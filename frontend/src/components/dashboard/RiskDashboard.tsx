@@ -143,7 +143,7 @@ export default function RiskDashboard({ userId }: RiskDashboardProps) {
                 Go to Dashboard
               </button>
               <button
-                onClick={() => window.location.href = '/assessments'}
+                onClick={() => window.location.href = '/assessment'}
                 className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-white font-medium"
               >
                 Take Assessment

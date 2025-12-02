@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line as RechartsLine, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import EmptyState, { EmptyStateIcons } from '../ui/EmptyState';
 import MedicalDisclaimer from '../ui/MedicalDisclaimer';
+import assessmentService from '../../services/assessmentService';
 
 interface Assessment {
   id: string;
@@ -42,20 +43,11 @@ const AssessmentHistory: React.FC<AssessmentHistoryProps> = ({ userId, onStartNe
   const fetchAssessments = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/assessments/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch assessments');
-      }
-
-      const data = await response.json();
+      const data = await assessmentService.getUserAssessments(userId);
       setAssessments(data.assessments || []);
       setError(null);
     } catch (err) {
+      console.error('Error fetching assessments:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);

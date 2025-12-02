@@ -102,12 +102,20 @@ const HealthMetrics: React.FC = () => {
         <p className="text-gray-400 mb-6">
           Start tracking your cognitive health by adding your first health metric. Input real data from medical assessments, lab results, or health monitoring devices.
         </p>
-        <button
-          onClick={() => console.log('Add health metric clicked')}
-          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-        >
-          Add Health Metric
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            onClick={() => window.location.href = '/assessment'}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          >
+            Take Assessment
+          </button>
+          <button
+            onClick={() => alert('Health metrics can be added through cognitive assessments, medical imaging uploads, or by your healthcare provider. Start with an assessment to generate your first metrics.')}
+            className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            Learn More
+          </button>
+        </div>
       </div>
     );
   }
