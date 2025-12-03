@@ -173,12 +173,31 @@ async def upload_imaging(
             detail="Only DICOM files (.dcm, .dicom) are supported"
         )
     
-    # Check file size (limit to 100MB)
-    content = await file.read()
-    if len(content) > 100 * 1024 * 1024:
+    # Check file size (limit to 100MB) - read in chunks
+    try:
+        content = bytearray()
+        max_size = 100 * 1024 * 1024  # 100MB
+        chunk_size = 1024 * 1024  # 1MB chunks
+        
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            content.extend(chunk)
+            if len(content) > max_size:
+                raise HTTPException(
+                    status_code=413,  # Payload Too Large
+                    detail="File size exceeds 100MB limit"
+                )
+        
+        content = bytes(content)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading file: {e}")
         raise HTTPException(
-            status_code=400,
-            detail="File size exceeds 100MB limit"
+            status_code=500,
+            detail=f"Error reading uploaded file: {str(e)}"
         )
     
     try:
