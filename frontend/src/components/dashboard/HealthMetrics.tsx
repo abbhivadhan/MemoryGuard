@@ -329,11 +329,11 @@ const AddMetricForm: React.FC<AddMetricFormProps> = ({ onClose, onSuccess }) => 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/health-metrics`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/health/metrics`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         },
         body: JSON.stringify({
           userId: user?.id,

@@ -44,9 +44,9 @@ const CaregiverConfig: React.FC = () => {
 
   const loadCaregivers = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/my-caregivers`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/caregivers/my-caregivers`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
       });
       
@@ -80,11 +80,11 @@ const CaregiverConfig: React.FC = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/invite`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/caregivers/invite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         },
         body: JSON.stringify({
           caregiver_email: newCaregiver.email,
@@ -131,10 +131,10 @@ const CaregiverConfig: React.FC = () => {
       }
       
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/${relationshipId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/caregivers/${relationshipId}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
           }
         });
         

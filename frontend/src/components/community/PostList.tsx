@@ -25,9 +25,20 @@ export default function PostList({ category }: PostListProps) {
   const loadPosts = async () => {
     try {
       setLoading(true);
+      console.log('[PostList] Fetching posts with category:', category);
+      console.log('[PostList] User:', user);
+      console.log('[PostList] Token exists:', !!localStorage.getItem('access_token'));
+      
       const data = await communityService.getPosts(category);
+      console.log('[PostList] Posts received:', data);
+      console.log('[PostList] Number of posts:', data?.length);
+      
       setPosts(data);
     } catch (err: any) {
+      console.error('[PostList] Error loading posts:', err);
+      console.error('[PostList] Error response:', err.response);
+      console.error('[PostList] Error status:', err.response?.status);
+      console.error('[PostList] Error data:', err.response?.data);
       setError(err.response?.data?.detail || 'Failed to load posts');
     } finally {
       setLoading(false);
