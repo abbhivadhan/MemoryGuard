@@ -5,7 +5,7 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from app.api.dependencies import get_db, get_current_user
+from app.api.dependencies import get_db, get_current_user, get_current_user_optional
 from app.models.user import User
 from app.models.community_post import (
     CommunityPost, CommunityReply, ContentFlag, EducationalResource,
@@ -76,7 +76,7 @@ async def get_posts(
     category: Optional[PostCategory] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
     """
@@ -346,7 +346,7 @@ async def get_resources(
     featured_only: bool = False,
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ):
     """

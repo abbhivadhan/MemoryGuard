@@ -60,7 +60,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(HTTPBearer(auto_error=False)),
     db: Session = Depends(get_db)
 ) -> Optional[User]:
     """
@@ -78,8 +78,16 @@ async def get_current_user_optional(
         return None
     
     try:
-        return await get_current_user(credentials, db)
-    except HTTPException:
+        token = credentials.credentials
+        payload = verify_access_token(token)
+        user_id: str = payload.get("sub")
+        
+        if user_id is None:
+            return None
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        return user
+    except Exception:
         return None
 
 
