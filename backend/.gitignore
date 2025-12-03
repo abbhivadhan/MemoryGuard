@@ -80,3 +80,5 @@ models/saved/
 # Logs
 *.log
 logs/
+Datasets/
+../Datasets/

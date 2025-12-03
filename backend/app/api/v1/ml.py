@@ -22,6 +22,7 @@ from app.schemas.ml import (
     ForecastResponse
 )
 from app.services.ml_service import MLService
+from app.services.real_ml_service import RealMLService
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +37,14 @@ async def create_prediction(
     db: Session = Depends(get_db)
 ):
     """
-    Create a new Alzheimer's disease risk prediction.
+    Create a new Alzheimer's disease risk prediction using real trained models.
     
     This endpoint processes health metrics and generates a prediction using
-    the ensemble ML model. The prediction is processed asynchronously.
+    models trained on real Alzheimer's datasets (genetic variants and MRI data).
     """
     try:
-        ml_service = MLService(db)
+        # Use RealMLService for predictions with trained models
+        real_ml_service = RealMLService(db)
         
         # Get user's health metrics
         user_id = request.user_id if request.user_id else current_user.id
@@ -54,19 +56,23 @@ async def create_prediction(
                 detail="Not authorized to create predictions for other users"
             )
         
-        # Queue prediction task
-        prediction = await ml_service.create_prediction_async(
+        # Convert health metrics to dict if provided
+        health_metrics = None
+        if request.health_metrics:
+            health_metrics = {m.name: m.value for m in request.health_metrics}
+        
+        # Create prediction using real models
+        prediction = real_ml_service.create_prediction(
             user_id=user_id,
-            health_metrics=request.health_metrics,
-            background_tasks=background_tasks
+            health_metrics=health_metrics
         )
         
         return PredictionResponse(
             id=prediction.id,
             user_id=prediction.user_id,
-            status='processing',
+            status='completed',
             created_at=prediction.created_at,
-            message="Prediction is being processed"
+            message="Prediction completed using real trained models"
         )
         
     except ValueError as e:

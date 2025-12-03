@@ -1,0 +1,25 @@
+{
+  "last_updated": "2025-12-03T10:33:44.663657",
+  "models": {
+    "genetic_ensemble": {
+      "path": "/Users/abbhivadhan/Desktop/AI4A/backend/ml_models/ensemble_predictor.joblib",
+      "type": "ensemble",
+      "version": "v1",
+      "accuracy": 1.0,
+      "features": 130,
+      "description": "Ensemble model trained on genetic variant data"
+    },
+    "mri_classifier": {
+      "path": "/Users/abbhivadhan/Desktop/AI4A/backend/ml_models/mri_random_forest.joblib",
+      "type": "random_forest",
+      "version": "v1",
+      "accuracy": 0.68,
+      "description": "MRI brain scan classifier"
+    }
+  },
+  "scalers": {
+    "genetic": "/Users/abbhivadhan/Desktop/AI4A/backend/ml_models/genetic_scaler.joblib",
+    "mri": "/Users/abbhivadhan/Desktop/AI4A/backend/ml_models/mri_scaler.joblib",
+    "mri_pca": "/Users/abbhivadhan/Desktop/AI4A/backend/ml_models/mri_pca.joblib"
+  }
+}

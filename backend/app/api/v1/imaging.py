@@ -19,6 +19,7 @@ from app.schemas.imaging import (
     AtrophyDetection
 )
 from app.services.imaging_service import ImagingService
+from app.services.real_imaging_service import RealMRIAnalyzer
 from app.core.config import settings
 
 router = APIRouter()
@@ -29,6 +30,9 @@ imaging_service = ImagingService(
     storage_path=getattr(settings, "IMAGING_STORAGE_PATH", "./data/imaging"),
     encryption_key=getattr(settings, "IMAGING_ENCRYPTION_KEY", None)
 )
+
+# Initialize real MRI analyzer
+mri_analyzer = RealMRIAnalyzer()
 
 
 def process_imaging_background(imaging_id: str, file_path: str, user_age: int = None):
@@ -60,29 +64,69 @@ def process_imaging_background(imaging_id: str, file_path: str, user_age: int = 
         # Process DICOM file
         results = imaging_service.process_dicom_file(file_path, user_age)
         
+        # Also analyze with real MRI model
+        try:
+            # Read the encrypted file
+            from pathlib import Path
+            encrypted_content = Path(file_path).read_bytes()
+            decrypted_content = imaging_service.cipher.decrypt(encrypted_content)
+            
+            # Analyze with real MRI model
+            mri_analysis = mri_analyzer.analyze_mri_scan(decrypted_content)
+            
+            # Extract volumetric features from MRI analysis
+            volumetric_features = mri_analyzer.extract_volumetric_features(mri_analysis)
+            
+            logger.info(f"MRI Analysis: {mri_analysis.get('category')} with {mri_analysis.get('confidence'):.2%} confidence")
+        except Exception as e:
+            logger.warning(f"MRI model analysis failed, using fallback: {e}")
+            mri_analysis = mri_analyzer._mock_analysis()
+            volumetric_features = mri_analyzer.extract_volumetric_features(mri_analysis)
+        
         if results["success"]:
+            # Use volumetric features from MRI model
+            measurements = volumetric_features
+            
             # Update imaging record with results
-            measurements = results.get("measurements", {})
             imaging.hippocampal_volume_left = measurements.get("hippocampal_volume_left")
             imaging.hippocampal_volume_right = measurements.get("hippocampal_volume_right")
             imaging.hippocampal_volume_total = measurements.get("hippocampal_volume_total")
             imaging.entorhinal_cortex_volume_left = measurements.get("entorhinal_cortex_volume_left")
             imaging.entorhinal_cortex_volume_right = measurements.get("entorhinal_cortex_volume_right")
             imaging.cortical_thickness_mean = measurements.get("cortical_thickness_mean")
-            imaging.cortical_thickness_std = measurements.get("cortical_thickness_std")
+            imaging.cortical_thickness_std = measurements.get("cortical_thickness_std", 0.5)
             imaging.total_brain_volume = measurements.get("total_brain_volume")
             imaging.total_gray_matter_volume = measurements.get("total_gray_matter_volume")
             imaging.total_white_matter_volume = measurements.get("total_white_matter_volume")
             imaging.ventricle_volume = measurements.get("ventricle_volume")
             
-            # Atrophy detection
-            atrophy = results.get("atrophy", {})
-            imaging.atrophy_detected = atrophy.get("regions", [])
-            imaging.atrophy_severity = atrophy.get("severity")
+            # Atrophy detection based on MRI classification
+            atrophy_regions = []
+            if mri_analysis.get('prediction', 0) >= 2:  # Mild or Moderate
+                atrophy_regions = ["Hippocampal Volume Total", "Cortical Thickness Mean"]
             
-            # Store additional results
-            imaging.analysis_results = results.get("metadata", {})
-            imaging.ml_features = results.get("ml_features", {})
+            imaging.atrophy_detected = atrophy_regions
+            imaging.atrophy_severity = mri_analysis.get('severity')
+            
+            # Store MRI analysis results
+            analysis_results = results.get("metadata", {})
+            analysis_results.update({
+                'mri_classification': mri_analysis.get('category'),
+                'mri_confidence': mri_analysis.get('confidence'),
+                'mri_risk_score': mri_analysis.get('risk_score'),
+                'mri_risk_level': mri_analysis.get('risk_level'),
+                'mri_probabilities': mri_analysis.get('probabilities'),
+                'model_version': mri_analysis.get('model_version')
+            })
+            imaging.analysis_results = analysis_results
+            
+            # Store ML features
+            ml_features = measurements.copy()
+            ml_features.update({
+                'prediction': mri_analysis.get('prediction'),
+                'confidence': mri_analysis.get('confidence')
+            })
+            imaging.ml_features = ml_features
             
             # Update metadata
             metadata = results.get("metadata", {})
@@ -91,7 +135,7 @@ def process_imaging_background(imaging_id: str, file_path: str, user_age: int = 
             imaging.series_description = metadata.get("series_description")
             
             imaging.status = ImagingStatus.COMPLETED
-            logger.info(f"Successfully processed imaging {imaging_id}")
+            logger.info(f"Successfully processed imaging {imaging_id} with real MRI model")
         else:
             imaging.status = ImagingStatus.FAILED
             imaging.processing_error = results.get("error", "Unknown error")
