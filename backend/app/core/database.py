@@ -8,20 +8,27 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# Create database engine with connection pooling optimized for Supabase
-# Use NullPool in dev mode to avoid connection issues
+# Create database engine with connection pooling optimized for Supabase/Render
+# Use QueuePool for production with proper timeout settings
 try:
+    # Determine if we're in production (Render) or development
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+    
     engine = create_engine(
         settings.DATABASE_URL,
-        poolclass=NullPool,  # Don't pre-connect
-        pool_pre_ping=False,  # Don't ping on checkout
-        pool_recycle=3600,   # Recycle connections after 1 hour
+        poolclass=QueuePool if is_production else NullPool,
+        pool_size=5 if is_production else 0,  # Max 5 connections in production
+        max_overflow=10 if is_production else 0,  # Allow 10 extra connections
+        pool_pre_ping=True,  # Verify connections before use
+        pool_recycle=300,  # Recycle connections after 5 minutes
         echo=settings.DEBUG,  # Log SQL queries in debug mode
         connect_args={
-            "connect_timeout": 2,
-            "options": "-c timezone=utc"
+            "connect_timeout": 10,  # Increased timeout for Render
+            "options": "-c timezone=utc -c statement_timeout=5000"  # 5 second query timeout
         },
-        isolation_level="AUTOCOMMIT"  # Avoid transaction overhead
+        execution_options={
+            "isolation_level": "READ COMMITTED"  # Better for concurrent access
+        }
     )
     logger.info("Database engine created (lazy connection)")
 except Exception as e:
