@@ -315,7 +315,7 @@ const BiomarkerBar: React.FC<BiomarkerBarProps> = ({
                     : 'bg-red-500/30 text-red-300 border border-red-500/50'
                 }`}
               >
-                {isInNormalRange ? '✓ Normal' : '⚠ Abnormal'}
+                {isInNormalRange ? 'Normal' : 'Abnormal'}
               </span>
               <span className="text-xs text-gray-400">
                 {new Date(biomarker.timestamp).toLocaleDateString()}

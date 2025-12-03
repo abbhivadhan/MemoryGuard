@@ -160,7 +160,7 @@ const HealthMetrics: React.FC = () => {
               isFetching ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            <span className={isFetching ? 'animate-spin' : ''}>↻</span>
+            <span className={isFetching ? 'animate-spin' : ''}>⟳</span>
             {isFetching ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
@@ -225,7 +225,7 @@ const MetricCategoryCard: React.FC<MetricCategoryCardProps> = ({ category }) => 
         ))}
         {sortedMetrics.length > 5 && (
           <button className="w-full text-center text-sm text-purple-400 hover:text-purple-300 py-2">
-            View all {sortedMetrics.length} metrics →
+            View all {sortedMetrics.length} metrics
           </button>
         )}
       </div>
@@ -252,7 +252,7 @@ const MetricItem: React.FC<MetricItemProps> = ({ metric }) => {
       <div className="flex-1">
         <div className="font-medium text-white">{metric.name}</div>
         <div className="text-xs text-gray-400 mt-1">
-          {formattedDate} • {metric.source}
+          {formattedDate} | {metric.source}
         </div>
       </div>
       <div className="text-right">

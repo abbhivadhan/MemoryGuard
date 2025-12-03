@@ -244,19 +244,19 @@ export default function RiskExplanation({ predictionId, prediction }: RiskExplan
         </h4>
         <ul className="space-y-2 text-sm text-purple-200">
           <li className="flex items-start">
-            <span className="text-purple-400 mr-2">•</span>
+            <span className="text-purple-400 mr-2">-</span>
             <span>Discuss these results with your healthcare provider for personalized guidance</span>
           </li>
           <li className="flex items-start">
-            <span className="text-purple-400 mr-2">•</span>
+            <span className="text-purple-400 mr-2">-</span>
             <span>Focus on modifiable risk factors through lifestyle changes</span>
           </li>
           <li className="flex items-start">
-            <span className="text-purple-400 mr-2">•</span>
+            <span className="text-purple-400 mr-2">-</span>
             <span>Continue regular cognitive assessments to monitor changes over time</span>
           </li>
           <li className="flex items-start">
-            <span className="text-purple-400 mr-2">•</span>
+            <span className="text-purple-400 mr-2">-</span>
             <span>Explore our personalized recommendations for brain health optimization</span>
           </li>
         </ul>

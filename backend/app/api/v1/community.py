@@ -168,21 +168,31 @@ async def create_post(
     - **visibility**: Who can see the post (public, members_only, matched_users)
     - **is_anonymous**: Whether to post anonymously
     """
-    post = CommunityPost(
-        id=str(uuid.uuid4()),
-        user_id=str(current_user.id),
-        title=post_data.title,
-        content=post_data.content,
-        category=post_data.category,
-        visibility=post_data.visibility,
-        is_anonymous=post_data.is_anonymous
-    )
+    import logging
+    logger = logging.getLogger(__name__)
     
-    db.add(post)
-    db.commit()
-    db.refresh(post)
-    
-    return _post_to_response(post, db)
+    try:
+        post = CommunityPost(
+            id=str(uuid.uuid4()),
+            user_id=current_user.id,  # Use UUID directly, not string
+            title=post_data.title,
+            content=post_data.content,
+            category=post_data.category.value if hasattr(post_data.category, 'value') else post_data.category,
+            visibility=post_data.visibility.value if hasattr(post_data.visibility, 'value') else post_data.visibility,
+            is_anonymous=post_data.is_anonymous
+        )
+        
+        db.add(post)
+        db.commit()
+        db.refresh(post)
+        
+        logger.info(f"Created community post {post.id} by user {current_user.id}")
+        
+        return _post_to_response(post, db)
+    except Exception as e:
+        logger.error(f"Error creating post: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create post: {str(e)}")
 
 
 @router.post("/posts/{post_id}/reply", response_model=CommunityReplyResponse, status_code=201)
@@ -199,27 +209,39 @@ async def create_reply(
     - **content**: Reply content
     - **is_anonymous**: Whether to reply anonymously
     """
-    # Check if post exists
-    post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
+    import logging
+    logger = logging.getLogger(__name__)
     
-    if post.is_moderated:
-        raise HTTPException(status_code=403, detail="Cannot reply to moderated post")
-    
-    reply = CommunityReply(
-        id=str(uuid.uuid4()),
-        post_id=post_id,
-        user_id=str(current_user.id),
-        content=reply_data.content,
-        is_anonymous=reply_data.is_anonymous
-    )
-    
-    db.add(reply)
-    db.commit()
-    db.refresh(reply)
-    
-    return _reply_to_response(reply, db)
+    try:
+        # Check if post exists
+        post = db.query(CommunityPost).filter(CommunityPost.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
+        
+        if post.is_moderated:
+            raise HTTPException(status_code=403, detail="Cannot reply to moderated post")
+        
+        reply = CommunityReply(
+            id=str(uuid.uuid4()),
+            post_id=post_id,
+            user_id=current_user.id,  # Use UUID directly, not string
+            content=reply_data.content,
+            is_anonymous=reply_data.is_anonymous
+        )
+        
+        db.add(reply)
+        db.commit()
+        db.refresh(reply)
+        
+        logger.info(f"Created reply {reply.id} to post {post_id} by user {current_user.id}")
+        
+        return _reply_to_response(reply, db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating reply: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create reply: {str(e)}")
 
 
 @router.delete("/posts/{post_id}", status_code=200)
@@ -237,8 +259,8 @@ async def delete_post(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     
-    # Check if current user is the author
-    if post.user_id != str(current_user.id):
+    # Check if current user is the author (compare UUIDs properly)
+    if post.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only delete your own posts")
     
     # Delete associated replies and flags
@@ -273,7 +295,7 @@ async def flag_post(
     flag = ContentFlag(
         id=str(uuid.uuid4()),
         post_id=post_id,
-        reporter_user_id=str(current_user.id),
+        reporter_user_id=current_user.id,  # Use UUID directly
         reason=flag_data.reason,
         description=flag_data.description
     )
@@ -306,7 +328,7 @@ async def flag_reply(
     flag = ContentFlag(
         id=str(uuid.uuid4()),
         reply_id=reply_id,
-        reporter_user_id=str(current_user.id),
+        reporter_user_id=current_user.id,  # Use UUID directly
         reason=flag_data.reason,
         description=flag_data.description
     )

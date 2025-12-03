@@ -11,11 +11,12 @@ import ActivityMonitor from '../components/caregiver/ActivityMonitor';
 import AlertSystem from '../components/caregiver/AlertSystem';
 import ActivityLogViewer from '../components/caregiver/ActivityLogViewer';
 import MedicationLogEditor from '../components/caregiver/MedicationLogEditor';
+import AssessmentManager from '../components/caregiver/AssessmentManager';
 import Scene from '../components/3d/Scene';
 import Starfield from '../components/3d/Starfield';
 import { ArrowLeft, Users, Activity, Bell, FileText, Pill } from 'lucide-react';
 
-type TabType = 'dashboard' | 'activity' | 'alerts' | 'log' | 'medications';
+type TabType = 'dashboard' | 'activity' | 'alerts' | 'assessments' | 'log' | 'medications';
 
 const CaregiverPage: React.FC = () => {
   const { patientId } = useParams<{ patientId?: string }>();
@@ -27,6 +28,7 @@ const CaregiverPage: React.FC = () => {
     { id: 'dashboard' as TabType, label: 'Dashboard', icon: Users },
     { id: 'activity' as TabType, label: 'Activity Monitor', icon: Activity, requiresPatient: true },
     { id: 'alerts' as TabType, label: 'Alerts', icon: Bell },
+    { id: 'assessments' as TabType, label: 'Assessments', icon: FileText, requiresPatient: true },
     { id: 'medications' as TabType, label: 'Medication Logs', icon: Pill },
     { id: 'log' as TabType, label: 'Activity Log', icon: FileText, requiresPatient: true },
   ];
@@ -36,7 +38,7 @@ const CaregiverPage: React.FC = () => {
       return <CaregiverDashboard />;
     }
 
-    if (!patientId && (activeTab === 'activity' || activeTab === 'log')) {
+    if (!patientId && (activeTab === 'activity' || activeTab === 'log' || activeTab === 'assessments')) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -63,6 +65,8 @@ const CaregiverPage: React.FC = () => {
         return patientId ? <ActivityMonitor patientId={patientId} /> : null;
       case 'alerts':
         return <AlertSystem />;
+      case 'assessments':
+        return patientId ? <AssessmentManager patientId={patientId} /> : null;
       case 'medications':
         return <MedicationLogEditor patientId={patientId} />;
       case 'log':

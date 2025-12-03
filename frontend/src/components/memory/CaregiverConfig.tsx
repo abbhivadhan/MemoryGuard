@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 interface CaregiverAccess {
   email: string;
   name: string;
+  relationshipId?: string;
   permissions: {
     view_reminders: boolean;
     manage_reminders: boolean;
@@ -41,43 +42,111 @@ const CaregiverConfig: React.FC = () => {
     loadCaregivers();
   }, []);
 
-  const loadCaregivers = () => {
-    // In a real implementation, this would fetch from the API
-    // For now, we'll use localStorage as a demo
-    const stored = localStorage.getItem('caregivers');
-    if (stored) {
-      setCaregivers(JSON.parse(stored));
+  const loadCaregivers = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/my-caregivers`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const formatted = data.map((rel: any) => ({
+          email: rel.caregiver_email,
+          name: rel.caregiver_name,
+          relationshipId: rel.id,
+          permissions: {
+            view_reminders: rel.permissions.can_manage_reminders,
+            manage_reminders: rel.permissions.can_manage_reminders,
+            view_routines: rel.permissions.can_view_health_data,
+            manage_routines: rel.permissions.can_view_health_data,
+            view_medications: rel.permissions.can_view_medications,
+            receive_alerts: rel.permissions.can_receive_alerts,
+          },
+        }));
+        setCaregivers(formatted);
+      }
+    } catch (error) {
+      console.error('Failed to load caregivers:', error);
     }
   };
 
   const saveCaregivers = (updatedCaregivers: CaregiverAccess[]) => {
-    localStorage.setItem('caregivers', JSON.stringify(updatedCaregivers));
     setCaregivers(updatedCaregivers);
   };
 
-  const handleAddCaregiver = (e: React.FormEvent) => {
+  const handleAddCaregiver = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updated = [...caregivers, newCaregiver];
-    saveCaregivers(updated);
-    setShowAddForm(false);
-    setNewCaregiver({
-      email: '',
-      name: '',
-      permissions: {
-        view_reminders: true,
-        manage_reminders: false,
-        view_routines: true,
-        manage_routines: false,
-        view_medications: true,
-        receive_alerts: true,
-      },
-    });
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/invite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          caregiver_email: newCaregiver.email,
+          relationship_type: 'family',
+          can_view_health_data: newCaregiver.permissions.view_routines,
+          can_view_assessments: true,
+          can_view_medications: newCaregiver.permissions.view_medications,
+          can_manage_reminders: newCaregiver.permissions.manage_reminders,
+          can_receive_alerts: newCaregiver.permissions.receive_alerts
+        })
+      });
+      
+      if (response.ok) {
+        await loadCaregivers();
+        setShowAddForm(false);
+        setNewCaregiver({
+          email: '',
+          name: '',
+          permissions: {
+            view_reminders: true,
+            manage_reminders: false,
+            view_routines: true,
+            manage_routines: false,
+            view_medications: true,
+            receive_alerts: true,
+          },
+        });
+      } else {
+        const error = await response.json();
+        alert(error.detail || 'Failed to add caregiver');
+      }
+    } catch (error) {
+      console.error('Failed to add caregiver:', error);
+      alert('Failed to add caregiver');
+    }
   };
 
-  const handleRemoveCaregiver = (email: string) => {
+  const handleRemoveCaregiver = async (email: string, relationshipId?: string) => {
     if (window.confirm('Are you sure you want to remove this caregiver?')) {
-      const updated = caregivers.filter((c) => c.email !== email);
-      saveCaregivers(updated);
+      if (!relationshipId) {
+        const updated = caregivers.filter((c) => c.email !== email);
+        saveCaregivers(updated);
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/caregivers/${relationshipId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.ok) {
+          await loadCaregivers();
+        } else {
+          alert('Failed to remove caregiver');
+        }
+      } catch (error) {
+        console.error('Failed to remove caregiver:', error);
+        alert('Failed to remove caregiver');
+      }
     }
   };
 
@@ -300,7 +369,7 @@ const CaregiverConfig: React.FC = () => {
                     <p className="text-sm text-gray-400">{caregiver.email}</p>
                   </div>
                   <button
-                    onClick={() => handleRemoveCaregiver(caregiver.email)}
+                    onClick={() => handleRemoveCaregiver(caregiver.email, caregiver.relationshipId)}
                     className="px-3 py-1 text-sm text-red-400 border border-red-500/50 rounded hover:bg-red-500/20 transition-colors"
                   >
                     Remove

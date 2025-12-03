@@ -278,6 +278,9 @@ async def get_user_assessments(
     Requirements: 12.4, 12.7
     """
     import logging
+    from app.models.emergency_contact import CaregiverRelationship
+    from sqlalchemy import and_
+    
     logger = logging.getLogger(__name__)
     
     # Verify user can access this data (must be own data or caregiver)
@@ -289,9 +292,28 @@ async def get_user_assessments(
             detail="Invalid user ID format"
         )
     
-    # Allow access - user is viewing their own assessments or is a caregiver
-    # Note: Simplified permission check for now
-    pass
+    # Check if current user is the patient or an authorized caregiver
+    is_authorized = False
+    
+    if user_uuid == current_user.id:
+        is_authorized = True
+    else:
+        # Check if current user is an authorized caregiver
+        relationship = db.query(CaregiverRelationship).filter(
+            and_(
+                CaregiverRelationship.caregiver_id == current_user.id,
+                CaregiverRelationship.patient_id == user_uuid,
+                CaregiverRelationship.active == True,
+                CaregiverRelationship.approved == True,
+                CaregiverRelationship.can_view_assessments == True
+            )
+        ).first()
+        
+        if relationship:
+            is_authorized = True
+    
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized")
     
     # Get assessments ordered by completion date (most recent first)
     assessments = db.query(Assessment).filter(
@@ -302,6 +324,62 @@ async def get_user_assessments(
         "assessments": [assessment.to_dict() for assessment in assessments],
         "total": len(assessments)
     }
+
+
+@router.delete("/{assessment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_assessment(
+    assessment_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete an assessment (patient or authorized caregiver only).
+    
+    Requirements: 12.4
+    """
+    from app.models.emergency_contact import CaregiverRelationship
+    from sqlalchemy import and_
+    
+    try:
+        assessment_uuid = uuid.UUID(assessment_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid assessment ID format"
+        )
+    
+    assessment = db.query(Assessment).filter(Assessment.id == assessment_uuid).first()
+    
+    if not assessment:
+        raise HTTPException(status_code=404, detail="Assessment not found")
+    
+    # Check if current user is the patient or an authorized caregiver
+    is_authorized = False
+    
+    if assessment.user_id == current_user.id:
+        is_authorized = True
+    else:
+        # Check if current user is an authorized caregiver
+        relationship = db.query(CaregiverRelationship).filter(
+            and_(
+                CaregiverRelationship.caregiver_id == current_user.id,
+                CaregiverRelationship.patient_id == assessment.user_id,
+                CaregiverRelationship.active == True,
+                CaregiverRelationship.approved == True,
+                CaregiverRelationship.can_view_assessments == True
+            )
+        ).first()
+        
+        if relationship:
+            is_authorized = True
+    
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    db.delete(assessment)
+    db.commit()
+    
+    return None
 
 
 @router.get("/{user_id}/latest/{assessment_type}", response_model=AssessmentResponse)

@@ -91,36 +91,55 @@ async def add_health_metric(
     db: Session = Depends(get_db)
 ):
     """Add a new health metric"""
-    user_id = UUID(metric_data.get("userId", str(current_user.id)))
-    
-    # Verify permission
-    if user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    metric = HealthMetric(
-        user_id=user_id,
-        type=metric_data["type"],
-        name=metric_data["name"],
-        value=float(metric_data["value"]),
-        unit=metric_data["unit"],
-        timestamp=datetime.fromisoformat(metric_data["timestamp"].replace('Z', '+00:00')),
-        source=metric_data["source"]
-    )
-    
-    db.add(metric)
-    db.commit()
-    db.refresh(metric)
-    
-    return {
-        "id": str(metric.id),
-        "userId": str(metric.user_id),
-        "type": metric.type,
-        "name": metric.name,
-        "value": float(metric.value),
-        "unit": metric.unit,
-        "timestamp": metric.timestamp.isoformat(),
-        "source": metric.source
-    }
+    try:
+        user_id = UUID(metric_data.get("userId", str(current_user.id)))
+        
+        # Verify permission
+        if user_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+        
+        # Parse timestamp
+        timestamp_str = metric_data["timestamp"].replace('Z', '+00:00')
+        timestamp = datetime.fromisoformat(timestamp_str)
+        
+        metric = HealthMetric(
+            user_id=user_id,
+            type=metric_data["type"],
+            name=metric_data["name"],
+            value=float(metric_data["value"]),
+            unit=metric_data["unit"],
+            timestamp=timestamp,
+            source=metric_data.get("source", "manual"),
+            notes=metric_data.get("notes")
+        )
+        
+        db.add(metric)
+        db.commit()
+        db.refresh(metric)
+        
+        logger.info(f"Added health metric: {metric.name} = {metric.value} {metric.unit} for user {user_id}")
+        
+        return {
+            "id": str(metric.id),
+            "userId": str(metric.user_id),
+            "type": metric.type,
+            "name": metric.name,
+            "value": float(metric.value),
+            "unit": metric.unit,
+            "timestamp": metric.timestamp.isoformat(),
+            "source": metric.source,
+            "notes": metric.notes
+        }
+    except KeyError as e:
+        logger.error(f"Missing required field: {e}")
+        raise HTTPException(status_code=400, detail=f"Missing required field: {e}")
+    except ValueError as e:
+        logger.error(f"Invalid value: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid value: {e}")
+    except Exception as e:
+        logger.error(f"Error adding health metric: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error adding health metric: {str(e)}")
 
 
 @router.put("/{metric_id}")

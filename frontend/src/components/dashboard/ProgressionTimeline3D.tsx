@@ -377,7 +377,6 @@ const TimelineDataPoint: React.FC<TimelineDataPointProps> = ({ point }) => {
               </div>
               {point.isForecast && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/20 border border-yellow-500/50">
-                  <span className="text-yellow-300 text-lg">⚠</span>
                   <span className="text-xs text-yellow-300 font-semibold">
                     Forecasted Value
                   </span>
