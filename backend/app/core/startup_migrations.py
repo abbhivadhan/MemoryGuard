@@ -26,6 +26,9 @@ def run_startup_migrations():
         # Migration 2: Seed cognitive training exercises
         seed_exercises()
         
+        # Migration 3: Fix NULL last_active timestamps
+        fix_null_last_active()
+        
         logger.info("✅ Startup migrations completed successfully")
         return True
         
@@ -310,3 +313,30 @@ def seed_exercises():
             db.rollback()
             db.close()
         # Don't raise - let the app continue
+
+
+def fix_null_last_active():
+    """
+    Fix NULL last_active timestamps for users.
+    Sets them to created_at or current time.
+    """
+    try:
+        with engine.connect() as conn:
+            logger.info("Fixing NULL last_active timestamps...")
+            
+            result = conn.execute(text("""
+                UPDATE users 
+                SET last_active = COALESCE(created_at, NOW())
+                WHERE last_active IS NULL
+            """))
+            conn.commit()
+            
+            rows_updated = result.rowcount
+            if rows_updated > 0:
+                logger.info(f"✅ Fixed {rows_updated} users with NULL last_active")
+            else:
+                logger.info("No users with NULL last_active found")
+                
+    except Exception as e:
+        logger.error(f"Error fixing NULL last_active: {e}")
+        # Don't raise - this is not critical

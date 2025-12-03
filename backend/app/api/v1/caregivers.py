@@ -216,106 +216,118 @@ async def get_my_patients(
     
     result = []
     for rel in relationships:
-        patient = db.query(User).filter(User.id == rel.patient_id).first()
-        if not patient:
-            continue
-        
-        # Get cognitive status (latest assessment)
-        cognitive_status = None
-        if rel.can_view_assessments:
-            latest_assessment = db.query(Assessment).filter(
-                Assessment.user_id == patient.id
-            ).order_by(desc(Assessment.completed_at)).first()
+        try:
+            patient = db.query(User).filter(User.id == rel.patient_id).first()
+            if not patient:
+                continue
             
-            if latest_assessment:
-                cognitive_status = {
-                    "type": latest_assessment.type,
-                    "score": latest_assessment.score,
-                    "max_score": latest_assessment.max_score,
-                    "completed_at": latest_assessment.completed_at.isoformat()
-                }
-        
-        # Get medication adherence
-        medication_adherence = None
-        if rel.can_view_medications:
-            # Calculate adherence for last 7 days
-            seven_days_ago = datetime.utcnow() - timedelta(days=7)
-            medications = db.query(Medication).filter(
+            # Get cognitive status (latest assessment)
+            cognitive_status = None
+            if rel.can_view_assessments:
+                latest_assessment = db.query(Assessment).filter(
+                    Assessment.user_id == patient.id
+                ).order_by(desc(Assessment.completed_at)).first()
+                
+                if latest_assessment:
+                    cognitive_status = {
+                        "type": latest_assessment.type,
+                        "score": latest_assessment.score,
+                        "max_score": latest_assessment.max_score,
+                        "completed_at": latest_assessment.completed_at.isoformat()
+                    }
+            
+            # Get medication adherence
+            medication_adherence = None
+            if rel.can_view_medications:
+                # Calculate adherence for last 7 days
+                seven_days_ago = datetime.utcnow() - timedelta(days=7)
+                medications = db.query(Medication).filter(
+                    and_(
+                        Medication.user_id == patient.id,
+                        Medication.active == True
+                    )
+                ).all()
+                
+                total_logs = 0
+                taken_logs = 0
+                
+                for med in medications:
+                    if med.adherence_log:
+                        for log in med.adherence_log:
+                            try:
+                                scheduled_time_str = log.get("scheduled_time", "")
+                                if not scheduled_time_str:
+                                    continue
+                                scheduled_time = datetime.fromisoformat(scheduled_time_str)
+                                if scheduled_time >= seven_days_ago:
+                                    total_logs += 1
+                                    if not log.get("skipped", True):
+                                        taken_logs += 1
+                            except (ValueError, TypeError):
+                                # Skip invalid datetime formats
+                                continue
+                
+                if total_logs > 0:
+                    adherence_rate = (taken_logs / total_logs * 100)
+                    
+                    medication_adherence = {
+                        "adherence_rate": round(adherence_rate, 1),
+                        "taken": taken_logs,
+                        "total": total_logs,
+                        "period_days": 7
+                    }
+            
+            # Get daily activities completion
+            daily_activities = None
+            today = datetime.utcnow().date()
+            completions = db.query(RoutineCompletion).join(DailyRoutine).filter(
                 and_(
-                    Medication.user_id == patient.id,
-                    Medication.active == True
+                    DailyRoutine.user_id == patient.id,
+                    RoutineCompletion.completion_date >= today
                 )
             ).all()
             
-            total_logs = 0
-            taken_logs = 0
-            
-            for med in medications:
-                if med.adherence_log:
-                    for log in med.adherence_log:
-                        scheduled_time = datetime.fromisoformat(log.get("scheduled_time", ""))
-                        if scheduled_time >= seven_days_ago:
-                            total_logs += 1
-                            if not log.get("skipped", True):
-                                taken_logs += 1
-            
-            if total_logs > 0:
-                adherence_rate = (taken_logs / total_logs * 100)
+            if completions:
+                completed = sum(1 for c in completions if c.completed)
+                total = len(completions)
                 
-                medication_adherence = {
-                    "adherence_rate": round(adherence_rate, 1),
-                    "taken": taken_logs,
-                    "total": total_logs,
-                    "period_days": 7
+                daily_activities = {
+                    "completed": completed,
+                    "total": total,
+                    "completion_rate": round((completed / total * 100) if total > 0 else 0, 1)
                 }
-        
-        # Get daily activities completion
-        daily_activities = None
-        today = datetime.utcnow().date()
-        completions = db.query(RoutineCompletion).join(DailyRoutine).filter(
-            and_(
-                DailyRoutine.user_id == patient.id,
-                RoutineCompletion.completion_date >= today
-            )
-        ).all()
-        
-        if completions:
-            completed = sum(1 for c in completions if c.completed)
-            total = len(completions)
             
-            daily_activities = {
-                "completed": completed,
-                "total": total,
-                "completion_rate": round((completed / total * 100) if total > 0 else 0, 1)
-            }
+            # Get recent alerts
+            recent_alerts = []
+            if rel.can_receive_alerts:
+                alerts = db.query(EmergencyAlert).filter(
+                    EmergencyAlert.user_id == patient.id
+                ).order_by(desc(EmergencyAlert.created_at)).limit(5).all()
+                
+                recent_alerts = [
+                    {
+                        "id": str(alert.id),
+                        "type": alert.alert_type,
+                        "message": alert.message,
+                        "severity": alert.severity,
+                        "created_at": alert.created_at.isoformat()
+                    }
+                    for alert in alerts
+                ]
         
-        # Get recent alerts
-        recent_alerts = []
-        if rel.can_receive_alerts:
-            alerts = db.query(EmergencyAlert).filter(
-                EmergencyAlert.user_id == patient.id
-            ).order_by(desc(EmergencyAlert.created_at)).limit(5).all()
-            
-            recent_alerts = [
-                {
-                    "id": str(alert.id),
-                    "type": alert.alert_type,
-                    "message": alert.message,
-                    "severity": alert.severity,
-                    "created_at": alert.created_at.isoformat()
-                }
-                for alert in alerts
-            ]
-        
-        result.append(PatientSummary(
-            patient_id=str(patient.id),
-            patient_name=patient.name,
-            last_active=patient.last_active.isoformat(),
-            cognitive_status=cognitive_status,
-            medication_adherence=medication_adherence,
-            daily_activities=daily_activities,
-            recent_alerts=recent_alerts
-        ))
+            result.append(PatientSummary(
+                patient_id=str(patient.id),
+                patient_name=patient.name,
+                last_active=patient.last_active.isoformat() if patient.last_active else datetime.utcnow().isoformat(),
+                cognitive_status=cognitive_status,
+                medication_adherence=medication_adherence,
+                daily_activities=daily_activities,
+                recent_alerts=recent_alerts
+            ))
+        except Exception as e:
+            # Log error but continue processing other patients
+            print(f"Error processing patient {rel.patient_id}: {str(e)}")
+            continue
     
     return result
 
